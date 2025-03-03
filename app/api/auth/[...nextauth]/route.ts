@@ -47,8 +47,8 @@ export const authOptions = {
     async jwt({ token, account, user }) {
       console.log("account", account);
       if (account) {
-        token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
+        token.idToken = account.id_token;
         token.expiresAt = Math.floor(Date.now() / 1000) + account.expires_in; // Expiry Time
         token.user = {
           id: user.id || account.providerAccountId,
@@ -77,7 +77,14 @@ export const authOptions = {
         }
 
         // ✅ Store tokens in cookies
-        cookies().set("access_token", token.accessToken, {
+        cookies().set("id_token", token.idToken, {
+          httpOnly: true, // ✅ Prevent XSS
+          secure: process.env.NODE_ENV === "production", // ✅ Secure in production
+          sameSite: "strict",
+          path: "/",
+          maxAge: account.expires_in, // Set to token expiry
+        });
+        cookies().set("refresh_token", token.refreshToken, {
           httpOnly: true, // ✅ Prevent XSS
           secure: process.env.NODE_ENV === "production", // ✅ Secure in production
           sameSite: "strict",

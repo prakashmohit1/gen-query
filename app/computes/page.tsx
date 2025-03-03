@@ -1,3 +1,5 @@
+"use client";
+import ConnectDatabase from "@/components/computes/connect-database";
 import {
   EllipsisVertical,
   Menu,
@@ -6,8 +8,10 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Tabs } from "radix-ui";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const [selectedDb, setSelectedDb] = useState("postgresql");
   const DATABASES = [
     {
       id: 1,
@@ -40,13 +44,22 @@ export default function LoginPage() {
       icon: "https://www.postgresql.org/favicon.ico",
     },
   ];
+
+  const onTabChange = (e: string) => {
+    console.log("e", e);
+    setSelectedDb(e);
+  };
   return (
     <div className="w-full flex-1 bg-white rounded p-4">
       <div className="flex flex-col space-y-2 text-center">
         <div className="text-l font-semibold tracking-tight text-left">
           Databases
         </div>
-        <Tabs.Root className="flex flex-col" defaultValue="postgresql">
+        <Tabs.Root
+          className="flex flex-col"
+          defaultValue="postgresql"
+          onValueChange={onTabChange}
+        >
           <Tabs.List
             className="flex border-b gap-4"
             aria-label="Manage your account"
@@ -71,9 +84,9 @@ export default function LoginPage() {
               />
             </div>
             <div className="flex-1 flex justify-end">
-              <button className="h-[30px] bg-black rounded text-white text-[13px] px-4">
-                Connect Database
-              </button>
+              <ConnectDatabase
+                database={DATABASES.find((db) => db.value === selectedDb)}
+              />
             </div>
           </div>
           {DATABASES.map((database) => (

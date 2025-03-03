@@ -2,9 +2,18 @@ import * as React from "react";
 import { DropdownMenu } from "radix-ui";
 import { logout } from "@/lib/actions";
 import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const ProfileDropdown = ({ session }: any) => {
   const { user = null } = session || {};
+  const router = useRouter();
+
+  const handleLogout = () => {
+    console.log("Logging out...");
+    router.replace("/");
+    logout();
+    signOut();
+  };
 
   return (
     <DropdownMenu.Root>
@@ -41,10 +50,7 @@ const ProfileDropdown = ({ session }: any) => {
           <DropdownMenu.Separator className="DropdownMenuSeparator" />
           <DropdownMenu.Item
             className="DropdownMenuItem p-2 cursor-pointer"
-            onClick={() => {
-              logout();
-              signOut();
-            }}
+            onClick={handleLogout}
           >
             {"Logout"}
           </DropdownMenu.Item>

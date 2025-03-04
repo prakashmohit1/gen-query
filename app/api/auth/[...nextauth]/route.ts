@@ -77,17 +77,20 @@ export const authOptions = {
         }
 
         // ✅ Store tokens in cookies
-        cookies().set("id_token", token.idToken, {
-          httpOnly: true, // ✅ Prevent XSS
-          secure: process.env.NODE_ENV === "production", // ✅ Secure in production
-          sameSite: "strict",
+        (
+          await // ✅ Store tokens in cookies
+          cookies()
+        ).set("id_token", token.idToken, {
+          // httpOnly: true, // ✅ Prevent XSS
+          // secure: process.env.NODE_ENV === "production", // ✅ Secure in production
+          // sameSite: "strict",
           path: "/",
           maxAge: account.expires_in, // Set to token expiry
         });
-        cookies().set("refresh_token", token.refreshToken, {
-          httpOnly: true, // ✅ Prevent XSS
-          secure: process.env.NODE_ENV === "production", // ✅ Secure in production
-          sameSite: "strict",
+        (await cookies()).set("refresh_token", token.refreshToken, {
+          // httpOnly: true, // ✅ Prevent XSS
+          // secure: process.env.NODE_ENV === "production", // ✅ Secure in production
+          // sameSite: "strict",
           path: "/",
           maxAge: account.expires_in, // Set to token expiry
         });

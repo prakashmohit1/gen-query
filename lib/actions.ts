@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createUser, validateCredentials } from "@/lib/auth";
+import { removeCookie } from "./utils";
 
 export async function login(formData: FormData) {
   const email = formData.get("email") as string;
@@ -89,6 +90,6 @@ export async function loginWithGoogle() {
 
 export async function logout() {
   console.log("Logging out...");
-  cookies().delete("id_token");
-  cookies().delete("refresh_token");
+  removeCookie("id_token");
+  removeCookie("refresh_token");
 }

@@ -10,9 +10,9 @@ const ProfileDropdown = ({ session }: any) => {
 
   const handleLogout = () => {
     console.log("Logging out...");
-    router.replace("/");
     logout();
     signOut();
+    router.replace("/");
   };
 
   return (

@@ -1,28 +1,25 @@
-import NextAuth from "next-auth";
+import NextAuth, { DefaultSession, Account, User } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { JWT } from "next-auth/jwt";
 import { cookies } from "next/headers"; // ✅ Next.js cookie handler
 
-async function refreshAccessToken(refreshToken: string) {
-  const url = "https://oauth2.googleapis.com/token";
-  const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID!,
-    client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-    grant_type: "refresh_token",
-    refresh_token: refreshToken,
-  });
+interface ExtendedToken extends JWT {
+  refreshToken?: string;
+  idToken?: string;
+  expiresAt?: number;
+  accessToken?: string;
+  user?: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  };
+}
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params,
-  });
-
-  const refreshedTokens = await response.json();
-  if (!response.ok) {
-    throw refreshedTokens;
-  }
-
-  return refreshedTokens;
+interface ExtendedSession extends DefaultSession {
+  accessToken?: string;
+  refreshToken?: string;
+  expiresAt?: number;
 }
 
 export const authOptions = {
@@ -44,12 +41,21 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    async jwt({ token, account, user }) {
-      console.log("account", account);
-      if (account) {
-        token.refreshToken = account.refresh_token;
-        token.idToken = account.id_token;
-        token.expiresAt = Math.floor(Date.now() / 1000) + account.expires_in; // Expiry Time
+    async jwt({
+      token,
+      account,
+      user,
+    }: {
+      token: ExtendedToken;
+      account: Account | null;
+      user: User | null;
+    }) {
+      console.log("account", token, account, user);
+      if (account && user) {
+        token.refreshToken = account.refresh_token as string;
+        token.idToken = account.id_token as string;
+        token.expiresAt =
+          Math.floor(Date.now() / 1000) + (account.expires_in as number);
         token.user = {
           id: user.id || account.providerAccountId,
           name: user.name,
@@ -57,52 +63,32 @@ export const authOptions = {
           image: user.image,
         };
 
-        // Check if token is expired
-        if (Date.now() > token.expiresAt) {
-          console.log("Access Token Expired! Refreshing...");
-          try {
-            const refreshedTokens = await refreshAccessToken(
-              token.refreshToken
-            );
-            return {
-              ...token,
-              accessToken: refreshedTokens.access_token,
-              expiresAt: Date.now() + refreshedTokens.expires_in * 1000, // Refresh token expiry
-              refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Keep old refresh_token if new one is not provided
-            };
-          } catch (error) {
-            console.error("Error refreshing access token", error);
-            return { ...token, error: "RefreshAccessTokenError" };
-          }
-        }
-
         // ✅ Store tokens in cookies
-        (
-          await // ✅ Store tokens in cookies
-          cookies()
-        ).set("id_token", token.idToken, {
-          // httpOnly: true, // ✅ Prevent XSS
-          // secure: process.env.NODE_ENV === "production", // ✅ Secure in production
-          // sameSite: "strict",
+        const cookieStore = await cookies();
+        cookieStore.set("id_token", token.idToken, {
           path: "/",
-          maxAge: account.expires_in, // Set to token expiry
+          maxAge: account.expires_in as number, // Set to token expiry
         });
-        (await cookies()).set("refresh_token", token.refreshToken, {
-          // httpOnly: true, // ✅ Prevent XSS
-          // secure: process.env.NODE_ENV === "production", // ✅ Secure in production
-          // sameSite: "strict",
+        cookieStore.set("refresh_token", token.refreshToken, {
           path: "/",
-          maxAge: account.expires_in, // Set to token expiry
+          maxAge: account.expires_in as number, // Set to token expiry
         });
       }
       return token;
     },
 
-    async session({ session, token }) {
-      session.user = token.user;
-      session.accessToken = token.accessToken;
-      session.refreshToken = token.refreshToken;
-      session.expiresAt = token.expiresAt;
+    async session({
+      session,
+      token,
+    }: {
+      session: ExtendedSession;
+      token: ExtendedToken;
+    }) {
+      if (token.user) {
+        session.user = token.user;
+        session.refreshToken = token.refreshToken;
+        session.expiresAt = token.expiresAt;
+      }
       return session;
     },
   },

@@ -1,195 +1,267 @@
 import * as React from "react";
-import { Dialog } from "radix-ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
-import { databaseService } from "@/lib/services/database.service";
-
-interface Database {
-  id: number;
-  name: string;
-  value: string;
-  icon: string;
-}
+import {
+  databaseService,
+  DatabaseConnection,
+} from "@/lib/services/database.service";
+import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 interface ConnectDatabaseProps {
-  database: Database | undefined;
+  database:
+    | {
+        id: number;
+        name: string;
+        value: string;
+        icon: string;
+      }
+    | undefined;
+  connectionData?: DatabaseConnection;
+  isOpen?: boolean;
   onSuccess?: () => void;
+  onClose?: () => void;
 }
 
 const FormField = [
   {
-    label: "Name",
-    placeholder: "Enter compute name",
     id: "name",
-    type: "input",
+    label: "Connection Name",
+    type: "text",
+    placeholder: "Enter connection name",
   },
   {
-    label: "Description",
-    placeholder: "Enter database description",
     id: "description",
+    label: "Description",
     type: "textarea",
+    placeholder: "Enter description (optional)",
   },
   {
-    label: "Host",
-    placeholder: "Enter host",
-    id: "host",
-    type: "input",
-  },
-  {
-    label: "Port",
-    placeholder: "Enter port",
-    id: "port",
-    type: "input",
-  },
-  {
-    label: "Username",
-    placeholder: "Enter username",
-    id: "username",
-    type: "input",
-  },
-  {
-    label: "Password",
-    placeholder: "Enter password",
-    id: "password",
-    type: "password",
-  },
-  {
+    id: "database_name",
     label: "Database Name",
+    type: "text",
     placeholder: "Enter database name",
-    id: "databaseName",
-    type: "input",
   },
-];
+  {
+    id: "host",
+    label: "Host",
+    type: "text",
+    placeholder: "Enter host",
+  },
+  {
+    id: "port",
+    label: "Port",
+    type: "text",
+    placeholder: "Enter port",
+  },
+  {
+    id: "username",
+    label: "Username",
+    type: "text",
+    placeholder: "Enter username",
+  },
+  {
+    id: "password",
+    label: "Password",
+    type: "password",
+    placeholder: "Enter password",
+  },
+  {
+    id: "is_active",
+    label: "Active Connection",
+    type: "switch",
+  },
+] as const;
 
-const ConnectDatabase = ({ database, onSuccess }: ConnectDatabaseProps) => {
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [isOpen, setIsOpen] = React.useState(false);
+type FormData = {
+  name: string;
+  description: string;
+  database_name: string;
+  host: string;
+  port: string;
+  username: string;
+  password: string;
+  db_type: string;
+  connection_options: Record<string, any>;
+  is_active: boolean;
+};
 
-  const onFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+export default function ConnectDatabase({
+  database,
+  connectionData,
+  isOpen,
+  onSuccess,
+  onClose,
+}: ConnectDatabaseProps) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  const form = useForm<FormData>({
+    defaultValues: {
+      name: connectionData?.name || "",
+      description: connectionData?.description || "",
+      host: connectionData?.host || "",
+      port: connectionData?.port?.toString() || "",
+      username: connectionData?.username || "",
+      password: connectionData?.password || "",
+      database_name: connectionData?.database_name || "",
+      db_type: database?.name.toLowerCase() || "",
+      connection_options: connectionData?.connection_options || {},
+      is_active: connectionData?.is_active ?? true,
+    },
+  });
+
+  useEffect(() => {
+    if (connectionData) {
+      form.reset({
+        name: connectionData.name,
+        description: connectionData.description || "",
+        host: connectionData.host,
+        port: connectionData.port.toString(),
+        username: connectionData.username,
+        password: connectionData.password || "",
+        database_name: connectionData.database_name,
+        db_type: connectionData.db_type.toLowerCase(),
+        connection_options: connectionData.connection_options || {},
+        is_active: connectionData.is_active,
+      });
+      setOpen(true);
+    }
+  }, [connectionData, form]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setOpen(true);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!open) {
+      onClose?.();
+    }
+  }, [open, onClose]);
+
+  const onSubmit = async (data: FormData) => {
     try {
-      const formData = new FormData(e.currentTarget);
-
+      setLoading(true);
       const payload = {
-        name: formData.get("name")?.toString() || "",
-        description: formData.get("description")?.toString() || "",
-        db_type: database?.value || "",
-        host: formData.get("host")?.toString() || "",
-        port: parseInt(formData.get("port")?.toString() || "0", 10),
-        username: formData.get("username")?.toString() || "",
-        password: formData.get("password")?.toString() || "",
-        database_name: formData.get("databaseName")?.toString() || "",
-        connection_options: {},
+        ...data,
+        port: parseInt(data.port, 10),
+        db_type: database?.name?.toLowerCase() || "",
       };
 
-      await databaseService.createDatabaseConnection(payload);
-      setIsOpen(false);
+      if (connectionData?.id) {
+        await databaseService.updateDatabaseConnection(
+          connectionData.id,
+          payload
+        );
+      } else {
+        await databaseService.createDatabaseConnection(payload);
+      }
+      setOpen(false);
       onSuccess?.();
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to create database connection"
-      );
-      console.error("Error:", err);
+      form.reset();
+    } catch (error) {
+      console.error("Error saving database connection:", error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
-      <Dialog.Trigger asChild>
-        <button className="h-[30px] bg-purple-600 hover:bg-purple-700 rounded text-white text-[13px] px-4 transition-colors">
-          {`Connect ${database?.name} Database`}
-        </button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 data-[state=open]:animate-overlayShow" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-md bg-white p-[25px] shadow-lg focus:outline-none data-[state=open]:animate-contentShow overflow-y-auto">
-          <Dialog.Title className="m-0 text-[17px] font-medium text-purple-900 mb-4">
-            {`Connect ${database?.name} Database`}
-          </Dialog.Title>
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded">
-              {error}
-            </div>
-          )}
-          <form onSubmit={onFormSubmit}>
-            {FormField.map((field) => (
-              <fieldset
-                key={field.id}
-                className="mb-[15px] flex items-center gap-5"
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>
+            {connectionData
+              ? `Update ${connectionData?.db_type} Database Connection`
+              : `Connect to ${database?.name} Database`}
+          </DialogTitle>
+          <DialogDescription>
+            {connectionData
+              ? "Update your database connection details below"
+              : "Enter your database connection details below"}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {FormField.map((field) => (
+            <fieldset
+              key={field.id}
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
+            >
+              <label
+                htmlFor={field.id}
+                className="text-[13px] font-medium text-gray-700 sm:w-[160px] sm:text-right"
               >
-                <label
-                  className="w-[160px] text-right text-[15px] text-gray-700"
-                  htmlFor={field.id}
-                >
-                  {field.label}
-                </label>
-                {field.type === "input" ? (
+                {field.label}
+              </label>
+              <div className="flex-1">
+                {field.type === "text" ? (
                   <input
-                    className="inline-flex h-[35px] w-full items-center justify-center rounded px-2.5 text-[15px] leading-none outline-none border border-gray-200 bg-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                    type="text"
                     id={field.id}
-                    name={field.id}
                     placeholder={field.placeholder}
-                    disabled={isLoading}
-                    required
+                    disabled={loading}
+                    className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    {...form.register(field.id)}
                   />
                 ) : field.type === "textarea" ? (
                   <textarea
-                    className="inline-flex w-full items-center py-2 h-[100px] justify-center rounded px-2.5 text-[15px] leading-none text-gray-900 outline-none border border-gray-200 bg-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
                     id={field.id}
-                    name={field.id}
                     placeholder={field.placeholder}
-                    disabled={isLoading}
+                    disabled={loading}
+                    className="w-full min-h-[60px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    {...form.register(field.id)}
                   />
                 ) : field.type === "password" ? (
                   <input
-                    className="inline-flex h-[35px] w-full items-center justify-center rounded px-2.5 text-[15px] leading-none text-gray-900 outline-none border border-gray-200 bg-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
-                    id={field.id}
-                    name={field.id}
-                    placeholder={field.placeholder}
                     type="password"
-                    disabled={isLoading}
-                    required
+                    id={field.id}
+                    placeholder={field.placeholder}
+                    disabled={loading}
+                    className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    {...form.register(field.id)}
                   />
+                ) : field.type === "switch" ? (
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id={field.id}
+                      checked={form.watch("is_active")}
+                      onCheckedChange={(checked) =>
+                        form.setValue("is_active", checked)
+                      }
+                      disabled={loading}
+                    />
+                    <span className="text-sm text-gray-500">
+                      {form.watch("is_active") ? "Active" : "Inactive"}
+                    </span>
+                  </div>
                 ) : null}
-              </fieldset>
-            ))}
-            <div className="mt-[25px] flex justify-end gap-3">
-              <Dialog.Close asChild>
-                <button
-                  type="button"
-                  className="h-[35px] border border-gray-200 hover:bg-gray-50 rounded text-gray-700 text-[13px] px-4 transition-colors disabled:opacity-50"
-                  disabled={isLoading}
-                >
-                  Cancel
-                </button>
-              </Dialog.Close>
-              <button
-                type="submit"
-                className="h-[35px] bg-purple-600 hover:bg-purple-700 rounded text-white text-[13px] px-4 transition-colors disabled:opacity-50 flex items-center gap-2"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  "Save changes"
-                )}
-              </button>
-            </div>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+              </div>
+            </fieldset>
+          ))}
+          <DialogFooter>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {connectionData ? "Update Connection" : "Create Connection"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
-};
-
-export default ConnectDatabase;
+}

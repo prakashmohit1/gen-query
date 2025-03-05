@@ -7,6 +7,11 @@ import {
   Search,
   ShieldCheck,
   Loader2,
+  Pencil,
+  Trash2,
+  Circle,
+  PauseCircle,
+  Pause,
 } from "lucide-react";
 import { Tabs } from "radix-ui";
 import { useState, useEffect } from "react";
@@ -14,6 +19,23 @@ import {
   databaseService,
   DatabaseConnection,
 } from "@/lib/services/database.service";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ComputePage() {
   const [selectedDb, setSelectedDb] = useState("postgresql");
@@ -21,6 +43,13 @@ export default function ComputePage() {
   const [error, setError] = useState<string | null>(null);
   const [connections, setConnections] = useState<DatabaseConnection[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedConnection, setSelectedConnection] =
+    useState<DatabaseConnection | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [deletingConnection, setDeletingConnection] =
+    useState<DatabaseConnection | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   const DATABASES = [
     {
@@ -31,38 +60,20 @@ export default function ComputePage() {
     },
     {
       id: 2,
-      name: "TursoDB",
-      value: "tursodb",
-      icon: "https://www.postgresql.org/favicon.ico",
-    },
-    {
-      id: 3,
       name: "MySQL",
       value: "mysql",
-      icon: "https://www.postgresql.org/favicon.ico",
-    },
-    {
-      id: 4,
-      name: "ClickHouse",
-      value: "clickhouse",
-      icon: "https://www.postgresql.org/favicon.ico",
-    },
-    {
-      id: 5,
-      name: "MongoDB",
-      value: "mongodb",
       icon: "https://www.postgresql.org/favicon.ico",
     },
   ];
 
   useEffect(() => {
     console.log("fetchDatabaseConnections");
+    setLoading(true);
     fetchDatabaseConnections();
   }, []);
 
   const fetchDatabaseConnections = async () => {
     try {
-      setLoading(true);
       const data = await databaseService.getDatabaseConnections();
       setConnections(data);
       setError(null);
@@ -76,13 +87,65 @@ export default function ComputePage() {
 
   const filteredConnections = connections.filter(
     (conn) =>
-      conn.type.toLowerCase() === selectedDb.toLowerCase() &&
+      conn?.db_type?.toLowerCase() === selectedDb?.toLowerCase() &&
       (searchTerm === "" ||
         conn.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const onTabChange = (e: string) => {
     setSelectedDb(e);
+  };
+
+  const setEmptyConnection = () => {
+    setSelectedConnection({
+      id: "",
+      name: "",
+      database_name: "",
+      username: "",
+      host: "",
+      port: "",
+      db_type: "",
+      is_active: false,
+    });
+  };
+
+  const handleEdit = async (connection: DatabaseConnection) => {
+    try {
+      setIsEditModalOpen(true);
+      setEmptyConnection();
+      const data = await databaseService.getDatabaseConnection(connection.id);
+      setSelectedConnection(data);
+    } catch (err) {
+      console.error("Error fetching connection details:", err);
+    }
+  };
+
+  const handleDelete = async (connectionId: string) => {
+    try {
+      await databaseService.deleteDatabaseConnection(connectionId);
+      await fetchDatabaseConnections(); // Refresh the list
+      setDeletingConnection(null);
+    } catch (err) {
+      console.error("Error deleting connection:", err);
+    }
+  };
+
+  const handleToggleStatus = async (connection: DatabaseConnection) => {
+    try {
+      setUpdatingStatus(connection.id);
+      const data = await databaseService.updateDatabaseConnection(
+        connection.id,
+        {
+          is_active: !connection.is_active,
+        }
+      );
+      console.log("data11", data);
+      await fetchDatabaseConnections(); // Refresh the list
+    } catch (err) {
+      console.error("Error updating connection status:", err);
+    } finally {
+      setUpdatingStatus(null);
+    }
   };
 
   return (
@@ -120,8 +183,26 @@ export default function ComputePage() {
               />
             </div>
             <div className="flex-1 flex justify-end">
+              <Button
+                size="sm"
+                className="text-[13px] h-[30px] bg-purple-600 hover:bg-purple-700"
+                onClick={() => {
+                  setIsEditModalOpen(true);
+                  setIsOpen(true);
+                }}
+              >
+                {"Connect Database"}
+              </Button>
               <ConnectDatabase
                 database={DATABASES.find((db) => db.value === selectedDb)}
+                isOpen={isOpen}
+                onSuccess={() => {
+                  setIsOpen(false);
+                  fetchDatabaseConnections();
+                }}
+                onClose={() => {
+                  setIsOpen(false);
+                }}
               />
             </div>
           </div>
@@ -149,13 +230,13 @@ export default function ComputePage() {
                           </th>
                           <th className="font-medium text-purple-900">Name</th>
                           <th className="font-medium text-purple-900">
-                            Created By
+                            Database Name
                           </th>
-                          <th className="font-medium text-purple-900">Size</th>
                           <th className="font-medium text-purple-900">
-                            Active / Max
+                            Username
                           </th>
-                          <th className="font-medium text-purple-900">Type</th>
+                          <th className="font-medium text-purple-900">Host</th>
+                          <th className="font-medium text-purple-900">Port</th>
                           <th className="font-medium text-purple-900">
                             Actions
                           </th>
@@ -178,28 +259,60 @@ export default function ComputePage() {
                               className="border-b border-gray-200 h-[30px]"
                             >
                               <td>
-                                <ShieldCheck
-                                  className={`w-4 ${
-                                    conn.status === "active"
-                                      ? "text-green-500"
-                                      : "text-gray-400"
-                                  }`}
-                                />
+                                <div className="flex items-center">
+                                  {conn.is_active ? (
+                                    <Circle className="w-3 h-3 text-green-500 fill-current" />
+                                  ) : (
+                                    <Circle className="w-3 h-3 text-red-500 fill-current" />
+                                  )}
+                                </div>
                               </td>
                               <td>{conn.name}</td>
-                              <td>{conn.createdBy}</td>
-                              <td>{conn.size}</td>
-                              <td>
-                                {conn.activeConnections}/{conn.maxConnections}
-                              </td>
-                              <td>{conn.connectionType}</td>
+                              <td>{conn.database_name}</td>
+                              <td>{conn.username}</td>
+                              <td>{conn.host}</td>
+                              <td>{conn.port}</td>
                               <td className="space-x-2">
-                                <button className="hover:bg-purple-50 p-1 rounded">
-                                  <Play className="w-3 h-3 text-purple-600" />
+                                <button
+                                  className="hover:bg-purple-50 p-1 rounded"
+                                  onClick={() => handleToggleStatus(conn)}
+                                  disabled={updatingStatus === conn.id}
+                                >
+                                  {updatingStatus === conn.id ? (
+                                    <Loader2 className="w-3 h-3 text-purple-600 animate-spin" />
+                                  ) : conn.is_active ? (
+                                    <Pause className="w-3 h-3 text-purple-600" />
+                                  ) : (
+                                    <Play className="w-3 h-3 text-purple-600" />
+                                  )}
                                 </button>
-                                <button className="hover:bg-purple-50 p-1 rounded">
-                                  <EllipsisVertical className="w-4 h-4 text-purple-600" />
-                                </button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button className="hover:bg-purple-50 p-1 rounded">
+                                      <EllipsisVertical className="w-4 h-4 text-purple-600" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent
+                                    align="end"
+                                    className="w-32"
+                                  >
+                                    <DropdownMenuItem
+                                      onClick={() => handleEdit(conn)}
+                                    >
+                                      <Pencil className="w-4 h-4 mr-2" />
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setDeletingConnection(conn)
+                                      }
+                                      className="text-red-600 focus:text-red-600"
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </td>
                             </tr>
                           ))
@@ -213,6 +326,51 @@ export default function ComputePage() {
           ))}
         </Tabs.Root>
       </div>
+
+      {/* Add ConnectDatabase modal for editing */}
+      {isEditModalOpen && selectedConnection && (
+        <ConnectDatabase
+          database={DATABASES.find(
+            (db) => db.value === selectedConnection.db_type
+          )}
+          connectionData={selectedConnection}
+          onSuccess={() => {
+            setIsEditModalOpen(false);
+            setSelectedConnection(null);
+            fetchDatabaseConnections();
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!deletingConnection}
+        onOpenChange={() => setDeletingConnection(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              database connection{" "}
+              <span className="font-semibold">{deletingConnection?.name}</span>{" "}
+              and remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingConnection(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                deletingConnection?.id && handleDelete(deletingConnection.id)
+              }
+            >
+              Delete Connection
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

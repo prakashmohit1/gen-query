@@ -36,6 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DATABASES } from "../constants";
 
 export default function ComputePage() {
   const [selectedDb, setSelectedDb] = useState("postgresql");
@@ -50,21 +51,6 @@ export default function ComputePage() {
   const [deletingConnection, setDeletingConnection] =
     useState<DatabaseConnection | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-
-  const DATABASES = [
-    {
-      id: 1,
-      name: "PostgreSQL",
-      value: "postgresql",
-      icon: "https://www.postgresql.org/favicon.ico",
-    },
-    {
-      id: 2,
-      name: "MySQL",
-      value: "mysql",
-      icon: "https://www.postgresql.org/favicon.ico",
-    },
-  ];
 
   useEffect(() => {
     console.log("fetchDatabaseConnections");

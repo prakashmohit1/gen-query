@@ -3,7 +3,6 @@ import { fetchFromApi } from "../common/service";
 
 export async function GET(request: Request) {
   try {
-    console.log("request.headers", request.headers);
     const response = await fetchFromApi("/database-connections", {
       method: "GET",
       headers: request.headers,

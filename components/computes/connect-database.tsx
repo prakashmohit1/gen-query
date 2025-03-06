@@ -17,6 +17,14 @@ import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DATABASES } from "@/app/constants";
 
 interface ConnectDatabaseProps {
   database:
@@ -33,7 +41,15 @@ interface ConnectDatabaseProps {
   onClose?: () => void;
 }
 
-const FormField = [
+interface FormFieldType {
+  id: keyof FormData;
+  label: string;
+  type: "text" | "textarea" | "password" | "switch" | "select";
+  placeholder?: string;
+  showOnlyOnUpdate?: boolean;
+}
+
+const FormField: FormFieldType[] = [
   {
     id: "name",
     label: "Connection Name",
@@ -51,6 +67,13 @@ const FormField = [
     label: "Database Name",
     type: "text",
     placeholder: "Enter database name",
+  },
+  {
+    id: "db_type",
+    label: "Database Type",
+    type: "select",
+    placeholder: "Select database type",
+    showOnlyOnUpdate: true,
   },
   {
     id: "host",
@@ -81,7 +104,7 @@ const FormField = [
     label: "Active Connection",
     type: "switch",
   },
-] as const;
+];
 
 type FormData = {
   name: string;
@@ -157,9 +180,11 @@ export default function ConnectDatabase({
       const payload = {
         ...data,
         port: parseInt(data.port, 10),
-        db_type: database?.name?.toLowerCase() || "",
+        db_type:
+          data.db_type?.toLowerCase() || database?.name?.toLowerCase() || "",
       };
 
+      console.log("payload", payload);
       if (connectionData?.id) {
         await databaseService.updateDatabaseConnection(
           connectionData.id,
@@ -194,62 +219,85 @@ export default function ConnectDatabase({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {FormField.map((field) => (
-            <fieldset
-              key={field.id}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
-            >
-              <label
-                htmlFor={field.id}
-                className="text-[13px] font-medium text-gray-700 sm:w-[160px] sm:text-right"
+          {FormField.map((field) => {
+            if (field.showOnlyOnUpdate && !connectionData) {
+              return null;
+            }
+
+            return (
+              <fieldset
+                key={field.id}
+                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
               >
-                {field.label}
-              </label>
-              <div className="flex-1">
-                {field.type === "text" ? (
-                  <input
-                    type="text"
-                    id={field.id}
-                    placeholder={field.placeholder}
-                    disabled={loading}
-                    className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    {...form.register(field.id)}
-                  />
-                ) : field.type === "textarea" ? (
-                  <textarea
-                    id={field.id}
-                    placeholder={field.placeholder}
-                    disabled={loading}
-                    className="w-full min-h-[60px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    {...form.register(field.id)}
-                  />
-                ) : field.type === "password" ? (
-                  <input
-                    type="password"
-                    id={field.id}
-                    placeholder={field.placeholder}
-                    disabled={loading}
-                    className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    {...form.register(field.id)}
-                  />
-                ) : field.type === "switch" ? (
-                  <div className="flex items-center space-x-2">
-                    <Switch
+                <label
+                  htmlFor={field.id}
+                  className="text-[13px] font-medium text-gray-700 sm:w-[160px] sm:text-right"
+                >
+                  {field.label}
+                </label>
+                <div className="flex-1">
+                  {field.type === "text" ? (
+                    <input
+                      type="text"
                       id={field.id}
-                      checked={form.watch("is_active")}
-                      onCheckedChange={(checked) =>
-                        form.setValue("is_active", checked)
-                      }
+                      placeholder={field.placeholder}
                       disabled={loading}
+                      className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      {...form.register(field.id)}
                     />
-                    <span className="text-sm text-gray-500">
-                      {form.watch("is_active") ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </fieldset>
-          ))}
+                  ) : field.type === "textarea" ? (
+                    <textarea
+                      id={field.id}
+                      placeholder={field.placeholder}
+                      disabled={loading}
+                      className="w-full min-h-[60px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      {...form.register(field.id)}
+                    />
+                  ) : field.type === "password" ? (
+                    <input
+                      type="password"
+                      id={field.id}
+                      placeholder={field.placeholder}
+                      disabled={loading}
+                      className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      {...form.register(field.id)}
+                    />
+                  ) : field.type === "select" ? (
+                    <Select
+                      value={form.watch("db_type")}
+                      onValueChange={(value) => form.setValue("db_type", value)}
+                      disabled={loading}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={field.placeholder} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DATABASES.map((db) => (
+                          <SelectItem key={db.value} value={db.value}>
+                            {db.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : field.type === "switch" ? (
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id={field.id}
+                        checked={form.watch("is_active")}
+                        onCheckedChange={(checked) =>
+                          form.setValue("is_active", checked)
+                        }
+                        disabled={loading}
+                      />
+                      <span className="text-sm text-gray-500">
+                        {form.watch("is_active") ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              </fieldset>
+            );
+          })}
           <DialogFooter>
             <Button
               type="submit"

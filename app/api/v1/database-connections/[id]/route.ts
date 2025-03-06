@@ -6,7 +6,6 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log("request.headers", request.headers);
     const response = await fetchFromApi(`/database-connections/${params.id}`, {
       method: "GET",
       headers: request.headers,

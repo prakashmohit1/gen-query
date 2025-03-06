@@ -2,6 +2,8 @@ import NextAuth, { DefaultSession, Account, User } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { JWT } from "next-auth/jwt";
 import { cookies } from "next/headers"; // ✅ Next.js cookie handler
+import { signOut } from "next-auth/react";
+import { redirect } from "next/navigation";
 
 interface ExtendedToken extends JWT {
   refreshToken?: string;
@@ -50,7 +52,6 @@ export const authOptions = {
       account: Account | null;
       user: User | null;
     }) {
-      console.log("account", token, account, user);
       if (account && user) {
         token.refreshToken = account.refresh_token as string;
         token.idToken = account.id_token as string;

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { fetchFromApi } from "../../common/service";
+import { fetchFromApi } from "../common/service";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const response = await fetchFromApi("/sql-queries/execute", {
+    const response = await fetchFromApi("/chat-conversations", {
       method: "POST",
       body: JSON.stringify(body),
       headers: request.headers,

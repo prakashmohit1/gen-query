@@ -1,4 +1,5 @@
 import { getCookie } from "@/lib/utils";
+import { sqlQueriesService } from "./sql-queries";
 
 export interface DatabaseConnection {
   id: string;
@@ -20,10 +21,57 @@ export interface CreateDatabaseConnection
   password: string;
 }
 
-class DatabaseService {
+export interface DatabaseTable {
+  name: string;
+  type?: string;
+  schema?: string;
+  columns?: {
+    name: string;
+    type: string;
+    nullable: boolean;
+  }[];
+}
+
+export interface DatabaseService {
+  getDatabaseConnections: () => Promise<
+    {
+      id: string;
+      name: string;
+      host: string;
+      port: number | string;
+      username: string;
+      password?: string;
+      database: string;
+      db_type: string;
+      is_active: boolean;
+      description?: string;
+      connection_options?: Record<string, any>;
+      status?: string;
+    }[]
+  >;
+
+  getDatabaseTables: (connectionId: string, db_type: string) => any;
+}
+
+class DatabaseServiceImpl implements DatabaseService {
   private baseUrl = "/api/v1/database-connections";
 
-  async getDatabaseConnections(): Promise<DatabaseConnection[]> {
+  async getDatabaseConnections(): Promise<
+    {
+      id: string;
+      name: string;
+      host: string;
+      port: number | string;
+      username: string;
+      password?: string;
+      database: string;
+      db_type: string;
+      is_active: boolean;
+      description?: string;
+      connection_options?: Record<string, any>;
+      status?: string;
+    }[]
+  > {
     const response = await fetch(this.baseUrl, {
       headers: {
         "Content-Type": "application/json",
@@ -96,6 +144,19 @@ class DatabaseService {
     }
     return response.json();
   }
+
+  async getDatabaseTables(connection_id: string, db_type: string) {
+    const TABLE_QUERY = {
+      postgresql: `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';`,
+      mysql: `SHOW TABLES;`,
+    };
+    const response = await sqlQueriesService.executeSQLQuery({
+      query: TABLE_QUERY[db_type],
+      connection_id,
+      params: {},
+    });
+    if (response.result) return response.result || [];
+  }
 }
 
-export const databaseService = new DatabaseService();
+export const databaseService = new DatabaseServiceImpl();

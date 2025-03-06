@@ -3,11 +3,18 @@
 import { useState } from "react";
 import { Bot, Sparkles, Code, Database, X, Send } from "lucide-react";
 import Image from "next/image";
+import { useSelectedDatabase } from "@/contexts/database-context";
+import { aiAgentServices } from "@/lib/services/ai-agent";
+import Role from "@/app/enums/role";
+import { FormattedMessage } from "./formatted-message";
 
 interface Message {
+  role: Role;
+  content: string;
+}
+
+interface ChatMessage extends Message {
   id: number;
-  text: string;
-  sender: "user" | "bot";
   timestamp: Date;
 }
 
@@ -17,15 +24,17 @@ interface SuggestedQuestion {
   icon: JSX.Element;
 }
 
-const AiAgent = ({
-  isOpen,
-  onClose,
-}: {
+interface AiAgentProps {
   isOpen: boolean;
   onClose: () => void;
-}) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  selectedDatabaseId?: string;
+}
+
+const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { selectedConnection } = useSelectedDatabase();
 
   const suggestedQuestions: SuggestedQuestion[] = [
     {
@@ -40,19 +49,50 @@ const AiAgent = ({
     },
   ];
 
-  const handleSendMessage = (text: string = inputMessage) => {
+  const handleSendMessage = async (text: string = inputMessage) => {
     if (!text.trim()) return;
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        text: text,
-        sender: "user",
-        timestamp: new Date(),
-      },
-    ]);
+    const newUserMessage: ChatMessage = {
+      id: messages.length + 1,
+      role: Role.USER,
+      content: text,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, newUserMessage]);
     setInputMessage("");
+    setIsLoading(true);
+
+    try {
+      const response = await aiAgentServices.sendMessage({
+        database_connection_id: selectedConnection?.id,
+        messages: [
+          ...messages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+          { role: Role.USER, content: text },
+        ],
+      });
+
+      // Add assistant's response to the messages
+      if (response.messages) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: prev.length + 2,
+            role: Role.ASSISTANT,
+            content: response.messages.slice(-1)[0].content,
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Optionally show error message to user
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -130,33 +170,44 @@ const AiAgent = ({
                 <div
                   key={message.id}
                   className={`flex items-start space-x-3 ${
-                    message.sender === "user"
+                    message.role === Role.USER
                       ? "flex-row-reverse space-x-reverse"
                       : ""
                   }`}
                 >
-                  {message.sender === "bot" && (
+                  {message.role === Role.ASSISTANT && (
                     <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
                       <Bot className="w-5 h-5 text-purple-600" />
                     </div>
                   )}
                   <div
                     className={`flex-1 ${
-                      message.sender === "user" ? "flex justify-end" : ""
+                      message.role === Role.USER ? "flex justify-end" : ""
                     }`}
                   >
-                    <p
-                      className={`text-sm p-3 rounded-lg ${
-                        message.sender === "user"
+                    <div
+                      className={`p-3 rounded-lg ${
+                        message.role === Role.USER
                           ? "bg-purple-600 text-white"
-                          : "bg-gray-100 text-gray-900"
+                          : ""
                       }`}
                     >
-                      {message.text}
-                    </p>
+                      <FormattedMessage
+                        content={message.content}
+                        isDark={message.role === Role.USER}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
+              {isLoading && (
+                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-5 h-5 text-purple-600 animate-pulse" />
+                  </div>
+                  <p>Thinking...</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -170,11 +221,12 @@ const AiAgent = ({
             onKeyPress={handleKeyPress}
             placeholder="@ for objects or / for commands"
             className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400"
+            disabled={isLoading}
           />
           <button
             onClick={() => handleSendMessage()}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-purple-600 disabled:opacity-50 disabled:hover:text-gray-400"
-            disabled={!inputMessage.trim()}
+            disabled={!inputMessage.trim() || isLoading}
           >
             <Send className="w-4 h-4" />
           </button>

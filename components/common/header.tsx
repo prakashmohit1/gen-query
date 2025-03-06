@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LogOut, User, Bot } from "lucide-react";
+import { LogOut, User, Bot, Menu } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -14,8 +14,15 @@ import {
 } from "../ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { deleteCookie } from "@/lib/utils";
+import { Button } from "../ui/button";
 
-const Header = ({ session, isAIAgentOpen, setIsAIAgentOpen }: any) => {
+const Header = ({
+  session,
+  isAIAgentOpen,
+  setIsAIAgentOpen,
+  isSideMenuCollapsed,
+  setIsSideMenuCollapsed,
+}: any) => {
   const router = useRouter();
   const handleLogout = () => {
     console.log("Logging out...");
@@ -29,6 +36,14 @@ const Header = ({ session, isAIAgentOpen, setIsAIAgentOpen }: any) => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-100 via-purple-50 to-white border-b border-purple-200 shadow-sm">
         <div className="mx-auto px-8">
           <div className="flex items-center justify-between h-16">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="top-4 left-4 z-40 hidden md:flex"
+              onClick={() => setIsSideMenuCollapsed(!isSideMenuCollapsed)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
             {/* Logo and Brand */}
             <Link href="/" className="flex items-center space-x-3 group">
               {/* Logo */}
@@ -40,7 +55,7 @@ const Header = ({ session, isAIAgentOpen, setIsAIAgentOpen }: any) => {
                 </span>
               </div>
               {/* Brand Name */}
-              <span className="text-lg font-semibold bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent">
+              <span className="flex-1 text-lg font-semibold bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent">
                 Gen Query
               </span>
             </Link>

@@ -37,12 +37,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DATABASES } from "../constants";
+import { useDatabaseList } from "@/contexts/database-context";
 
 export default function ComputePage() {
   const [selectedDb, setSelectedDb] = useState("postgresql");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [connections, setConnections] = useState<DatabaseConnection[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedConnection, setSelectedConnection] =
     useState<DatabaseConnection | null>(null);
@@ -51,27 +49,9 @@ export default function ComputePage() {
   const [deletingConnection, setDeletingConnection] =
     useState<DatabaseConnection | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const { databases, isLoading, error, refreshConnections } = useDatabaseList();
 
-  useEffect(() => {
-    console.log("fetchDatabaseConnections");
-    setLoading(true);
-    fetchDatabaseConnections();
-  }, []);
-
-  const fetchDatabaseConnections = async () => {
-    try {
-      const data = await databaseService.getDatabaseConnections();
-      setConnections(data);
-      setError(null);
-    } catch (err) {
-      setError("Failed to fetch database connections");
-      console.error("Error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredConnections = connections.filter(
+  const filteredConnections = databases.filter(
     (conn) =>
       conn?.db_type?.toLowerCase() === selectedDb?.toLowerCase() &&
       (searchTerm === "" ||
@@ -109,7 +89,7 @@ export default function ComputePage() {
   const handleDelete = async (connectionId: string) => {
     try {
       await databaseService.deleteDatabaseConnection(connectionId);
-      await fetchDatabaseConnections(); // Refresh the list
+      refreshConnections(); // Refresh the list
       setDeletingConnection(null);
     } catch (err) {
       console.error("Error deleting connection:", err);
@@ -126,7 +106,7 @@ export default function ComputePage() {
         }
       );
       console.log("data11", data);
-      await fetchDatabaseConnections(); // Refresh the list
+      refreshConnections(); // Refresh the list
     } catch (err) {
       console.error("Error updating connection status:", err);
     } finally {
@@ -135,7 +115,7 @@ export default function ComputePage() {
   };
 
   return (
-    <div className="w-full bg-white rounded-lg shadow-sm">
+    <div className="w-full bg-white rounded-lg shadow-sm p-4">
       <div className="flex flex-col space-y-2">
         <div className="text-xl font-semibold text-purple-900">Databases</div>
         <Tabs.Root
@@ -184,7 +164,7 @@ export default function ComputePage() {
                 isOpen={isOpen}
                 onSuccess={() => {
                   setIsOpen(false);
-                  fetchDatabaseConnections();
+                  refreshConnections();
                 }}
                 onClose={() => {
                   setIsOpen(false);
@@ -199,7 +179,7 @@ export default function ComputePage() {
               value={database.value}
               key={database.id}
             >
-              {loading ? (
+              {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
                 </div>
@@ -323,7 +303,7 @@ export default function ComputePage() {
           onSuccess={() => {
             setIsEditModalOpen(false);
             setSelectedConnection(null);
-            fetchDatabaseConnections();
+            refreshConnections();
           }}
         />
       )}

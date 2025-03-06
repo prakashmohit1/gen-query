@@ -16,7 +16,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`overflow-x-hidden ${inter.className}`}>
+      <body className={`overflow-hidden ${inter.className}`}>
         <AuthProvider session={session}>
           {session ? (
             // Show layout with sidebar for authenticated users

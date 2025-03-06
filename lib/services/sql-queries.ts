@@ -12,7 +12,10 @@ export interface SQLQuery {
   status?: string;
   execution_status: boolean;
   error_message?: string;
-  rows?: any[];
+  result: {
+    columns: string[];
+    rows: Record<string, any>[];
+  };
 }
 
 export interface ExecuteSQLQuery {

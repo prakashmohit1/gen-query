@@ -20,8 +20,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { sqlQueriesService } from "@/lib/services/sql-queries";
-import { useDatabase, useDatabaseList } from "@/contexts/database-context";
 import { QueryPerformance } from "./query-performance-popup";
 
 interface ResultsTableProps {

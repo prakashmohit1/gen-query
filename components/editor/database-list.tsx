@@ -17,6 +17,7 @@ import {
 } from "@/lib/services/database.service";
 import {
   useDatabaseList,
+  useQueryDetails,
   useSelectedDatabase,
 } from "@/contexts/database-context";
 import { sqlQueriesService } from "@/lib/services/sql-queries";
@@ -60,6 +61,7 @@ export function DatabaseList({
 
   const { databases } = useDatabaseList();
   const { selectedConnection, selectConnection } = useSelectedDatabase();
+  const { setMovedQueryText } = useQueryDetails();
 
   const fetchSavedQueries = async () => {
     setIsLoadingQueries(true);
@@ -235,6 +237,9 @@ export function DatabaseList({
                   <div
                     key={query.id}
                     className="flex items-center gap-2 px-2 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer"
+                    onClick={() => {
+                      setMovedQueryText(query.query_text);
+                    }}
                   >
                     <FileCode className="w-4 h-4 text-purple-500" />
                     <div className="flex-1 min-w-0">

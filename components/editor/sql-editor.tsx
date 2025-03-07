@@ -5,13 +5,22 @@ import CodeMirror from "@uiw/react-codemirror";
 import { sql } from "@codemirror/lang-sql";
 import { vscodeLight } from "@uiw/codemirror-theme-vscode";
 import { Button } from "@/components/ui/button";
-import { Play, Database, Plus, X } from "lucide-react";
+import { Play, Database, Plus, X, Clock, Settings2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   autocompletion,
   CompletionContext,
   CompletionResult,
 } from "@codemirror/autocomplete";
+import { format } from "date-fns";
+import { DatabaseSelector } from "@/components/common/database-selector";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
+import { ResultsTable } from "@/components/editor/results-table";
+import type { DatabaseTable } from "@/lib/services/database.service";
 
 interface QueryTab {
   id: string;
@@ -23,20 +32,18 @@ interface QueryTab {
 interface SQLEditorProps {
   value: string;
   onChange: (value: string) => void;
-  onExecute: (params: Record<string, any>) => void;
+  onExecute: (queryText: string, params: Record<string, any>) => void;
   isExecuting?: boolean;
   selectedDatabase?: {
     name: string;
     database: string;
   };
-  tables?: {
-    name: string;
-    type: string;
-    columns?: { name: string; type: string }[];
-  }[];
+  tables?: DatabaseTable[];
   dbType?: string;
   parameters: Record<string, string>;
   setParameters: (params: Record<string, string>) => void;
+  results?: any;
+  error?: string | null;
 }
 
 export function SQLEditor({
@@ -49,6 +56,8 @@ export function SQLEditor({
   dbType = "postgresql",
   parameters,
   setParameters,
+  results,
+  error,
 }: SQLEditorProps) {
   const [tabs, setTabs] = useState<QueryTab[]>([
     { id: "1", name: "Query 1", query: value, parameters: {} },
@@ -57,6 +66,7 @@ export function SQLEditor({
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<any>(null);
 
   const handleAddTab = () => {
     const newTabId = (tabs.length + 1).toString();
@@ -349,39 +359,63 @@ export function SQLEditor({
     }
   };
 
+  const getCurrentTimestamp = () => {
+    return format(new Date(), "yyyy-MM-dd h:mma");
+  };
+
+  const handleExecuteQuery = () => {
+    if (!editorRef.current) return;
+
+    const editor = editorRef.current.view;
+    const selection = editor.state.selection;
+    const selectedText = editor.state.sliceDoc(
+      selection.main.from,
+      selection.main.to
+    );
+
+    // If there's selected text, execute only that portion
+    // Otherwise, execute the entire query
+    const queryToExecute = selectedText || value;
+    console.log("selection", selection);
+    console.log("queryToExecute", queryToExecute);
+
+    if (queryToExecute.trim()) {
+      onExecute(queryToExecute, parameters);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-4">
-          <div className="text-sm font-semibold text-purple-900">
-            Database Editor
+          <Button
+            size="sm"
+            className="text-[13px] h-[30px] bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 transition-colors"
+            onClick={handleExecuteQuery}
+            disabled={isExecuting || !selectedDatabase}
+          >
+            <Play className="w-4 h-4" />
+            {isExecuting ? (
+              <span className="flex items-center gap-2">
+                <Clock className="w-4 h-4 animate-spin" />
+                Executing...
+              </span>
+            ) : (
+              "Run"
+            )}
+          </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-900">
+              {tabs.find((tab) => tab.id === activeTabId)?.name || "New Query"}
+            </span>
+            <span className="text-sm text-gray-500">
+              {getCurrentTimestamp()}
+            </span>
           </div>
-          {selectedDatabase ? (
-            <div className="flex items-center gap-2 px-3 py-1 text-sm bg-purple-50 text-purple-700 rounded-md">
-              <Database className="w-3.5 h-3.5" />
-              <span>{selectedDatabase.name}</span>
-              <span className="text-purple-400">/</span>
-              <span className="font-medium">{selectedDatabase.database}</span>
-              {dbType && (
-                <>
-                  <span className="text-purple-400">/</span>
-                  <span className="text-xs text-purple-500">{dbType}</span>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="text-sm text-gray-500">No database selected</div>
-          )}
         </div>
-        <Button
-          size="sm"
-          className="bg-purple-600 hover:bg-purple-700 gap-2"
-          onClick={() => onExecute(parameters)}
-          disabled={isExecuting || !selectedDatabase}
-        >
-          <Play className="w-4 h-4" />
-          {isExecuting ? "Executing..." : "Run Query"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <DatabaseSelector />
+        </div>
       </div>
 
       <div className="flex items-center gap-1 px-2 pt-2 border-b bg-gray-50">
@@ -390,7 +424,7 @@ export function SQLEditor({
             key={tab.id}
             className={`group flex items-center gap-2 px-4 py-2 text-sm rounded-t-lg cursor-pointer border-x border-t transition-colors ${
               activeTabId === tab.id
-                ? "bg-white text-purple-900 border-gray-200"
+                ? "bg-white text-gray-900 border-gray-200"
                 : "bg-gray-50 text-gray-600 border-transparent hover:bg-gray-100"
             }`}
             onClick={() => handleTabChange(tab.id)}
@@ -433,85 +467,85 @@ export function SQLEditor({
         </Button>
       </div>
 
-      <div className="flex-1 overflow-auto">
-        <CodeMirror
-          value={value}
-          height="30vh"
-          theme={vscodeLight}
-          extensions={[
-            sql(),
-            autocompletion({ override: [customSQLCompletion] }),
-          ]}
-          onChange={(newValue) => {
-            onChange(newValue);
-            // Update tab query
-            setTabs(
-              tabs.map((tab) =>
-                tab.id === activeTabId ? { ...tab, query: newValue } : tab
-              )
-            );
-          }}
-          basicSetup={{
-            lineNumbers: true,
-            highlightActiveLineGutter: true,
-            highlightSpecialChars: true,
-            history: true,
-            foldGutter: true,
-            drawSelection: true,
-            dropCursor: true,
-            allowMultipleSelections: true,
-            indentOnInput: true,
-            syntaxHighlighting: true,
-            bracketMatching: true,
-            closeBrackets: true,
-            autocompletion: true,
-            rectangularSelection: true,
-            crosshairCursor: true,
-            highlightActiveLine: true,
-            highlightSelectionMatches: true,
-            closeBracketsKeymap: true,
-            defaultKeymap: true,
-            searchKeymap: true,
-            historyKeymap: true,
-            foldKeymap: true,
-            completionKeymap: true,
-            lintKeymap: true,
-          }}
-        />
-      </div>
+      <ResizablePanelGroup direction="vertical">
+        <ResizablePanel defaultSize={40}>
+          <div className="flex-1 overflow-auto">
+            <CodeMirror
+              ref={editorRef}
+              value={value}
+              height="30vh"
+              theme={vscodeLight}
+              extensions={[
+                sql(),
+                autocompletion({ override: [customSQLCompletion] }),
+              ]}
+              onChange={(newValue) => {
+                onChange(newValue);
+                setTabs(
+                  tabs.map((tab) =>
+                    tab.id === activeTabId ? { ...tab, query: newValue } : tab
+                  )
+                );
+              }}
+              basicSetup={{
+                lineNumbers: true,
+                highlightActiveLineGutter: true,
+                highlightSpecialChars: true,
+                history: true,
+                foldGutter: true,
+                drawSelection: true,
+                dropCursor: true,
+                allowMultipleSelections: true,
+                indentOnInput: true,
+                syntaxHighlighting: true,
+                bracketMatching: true,
+                closeBrackets: true,
+                autocompletion: true,
+                rectangularSelection: true,
+                crosshairCursor: true,
+                highlightActiveLine: true,
+                highlightSelectionMatches: true,
+                closeBracketsKeymap: true,
+                defaultKeymap: true,
+                searchKeymap: true,
+                historyKeymap: true,
+                foldKeymap: true,
+                completionKeymap: true,
+                lintKeymap: true,
+              }}
+            />
+          </div>
+        </ResizablePanel>
 
-      <div className="border-t bg-gray-50">
-        <div className="p-2">
-          <div className="flex flex-wrap gap-2">
+        <ResizableHandle />
+        <div className="p-4 border-t">
+          <div className="flex flex-wrap gap-4">
             {Object.entries(parameters).map(([name, value]) => (
-              <div
-                key={name}
-                className="flex items-center gap-2 bg-white rounded-md border p-1"
-              >
-                <Input
-                  placeholder="Parameter name"
-                  value={name}
-                  onChange={(e) => {
-                    const newParams = { ...parameters };
-                    delete newParams[name];
-                    handleParameterChange(e.target.value, value);
-                  }}
-                  className="h-7 w-[120px]"
-                />
-                <Input
-                  placeholder="Value"
-                  value={value}
-                  onChange={(e) => handleParameterChange(name, e.target.value)}
-                  className="h-7 w-[120px]"
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
+              <div key={name} className="flex items-center gap-2">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      {name}
+                    </label>
+                    <button className="text-gray-400 hover:text-gray-600">
+                      <Settings2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <Input
+                    value={value}
+                    onChange={(e) =>
+                      handleParameterChange(name, e.target.value)
+                    }
+                    className="h-8 w-[200px]"
+                    placeholder="Enter value..."
+                  />
+                </div>
+                <button
                   onClick={() => handleRemoveParameter(name)}
-                  className="h-7 w-7 p-0"
+                  className="self-end h-8 px-2 text-gray-400 hover:text-red-500"
                 >
-                  <span className="text-gray-500 hover:text-red-500">×</span>
-                </Button>
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             ))}
             <Button
@@ -520,18 +554,15 @@ export function SQLEditor({
               onClick={handleAddParameter}
               className="h-8"
             >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Parameter
+              Add parameter
             </Button>
-
-            {Object.keys(parameters).length === 0 && (
-              <div className="text-sm text-gray-500 py-1">
-                No parameters added
-              </div>
-            )}
           </div>
         </div>
-      </div>
+
+        <ResizablePanel defaultSize={60}>
+          <ResultsTable data={results} isLoading={isExecuting} error={error} />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }

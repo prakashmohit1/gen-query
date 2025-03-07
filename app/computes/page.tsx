@@ -151,7 +151,7 @@ export default function ComputePage() {
             <div className="flex-1 flex justify-end">
               <Button
                 size="sm"
-                className="text-[13px] h-[30px] bg-purple-600 hover:bg-purple-700"
+                className="text-[13px] h-[30px] bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 transition-colors"
                 onClick={() => {
                   setIsEditModalOpen(true);
                   setIsOpen(true);
@@ -324,10 +324,14 @@ export default function ComputePage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletingConnection(null)}>
+            <AlertDialogCancel
+              className="border border-gray-200 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              onClick={() => setDeletingConnection(null)}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
+              className="bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 transition-colors"
               onClick={() =>
                 deletingConnection?.id && handleDelete(deletingConnection.id)
               }

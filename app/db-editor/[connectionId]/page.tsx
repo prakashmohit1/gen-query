@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { SQLEditor } from "@/components/editor/sql-editor";
-import { ResultsTable } from "@/components/editor/results-table";
 import { DatabaseList } from "@/components/editor/database-list";
 import { sqlQueriesService } from "@/lib/services/sql-queries";
 import { databaseService } from "@/lib/services/database.service";
@@ -17,23 +16,6 @@ import {
   useSelectedDatabase,
 } from "@/contexts/database-context";
 
-interface DatabaseConnection {
-  id: string;
-  name: string;
-  host: string;
-  port: number | string;
-  username: string;
-  password?: string;
-  database: string;
-  database_name?: string;
-  db_type: string;
-  is_active: boolean;
-  description?: string;
-  connection_options?: Record<string, any>;
-  status?: string;
-  tables?: DatabaseTable[];
-}
-
 export default function EditorPage() {
   const [query, setQuery] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
@@ -42,15 +24,17 @@ export default function EditorPage() {
   const [parameters, setParameters] = useState<Record<string, string>>({});
   const { selectedConnection } = useSelectedDatabase();
   const { movedQueryText, setMovedQueryText } = useQueryDetails();
+  const [databaseTables, setDatabaseTables] = useState<DatabaseTable[]>([]);
+
   const handleExecuteQuery = async (selectedQuery: string) => {
-    if (!selectedQuery || !query.trim() || !selectedConnection) return;
+    if (!selectedQuery || !selectedQuery.trim() || !selectedConnection) return;
 
     setIsExecuting(true);
     setError(null);
 
     try {
       const response = await sqlQueriesService.executeSQLQuery({
-        query: selectedQuery || query,
+        query: selectedQuery,
         connection_id: selectedConnection.id,
         params: parameters,
       });
@@ -75,6 +59,31 @@ export default function EditorPage() {
     }
   }, [movedQueryText]);
 
+  useEffect(() => {
+    if (selectedConnection) {
+      databaseService
+        .getDatabaseTables(selectedConnection.id, selectedConnection.db_type)
+        .then((result) => {
+          if (result?.rows) {
+            // Transform the rows into DatabaseTable format
+            const tables = result.rows.map((row) => ({
+              name: row.table_name || row.TABLE_NAME || Object.values(row)[0],
+              type: "table",
+              schema: "public",
+              columns: [
+                {
+                  name: "id",
+                  type: "integer",
+                  nullable: false,
+                },
+              ], // Default column until we implement column fetching
+            }));
+            setDatabaseTables(tables);
+          }
+        });
+    }
+  }, [selectedConnection]);
+
   return (
     <div className="h-screen bg-white">
       <ResizablePanelGroup direction="horizontal">
@@ -85,30 +94,26 @@ export default function EditorPage() {
         <ResizableHandle />
 
         <ResizablePanel defaultSize={80}>
-          <ResizablePanelGroup direction="vertical">
-            <ResizablePanel defaultSize={40}>
-              <SQLEditor
-                parameters={parameters}
-                setParameters={setParameters}
-                value={query}
-                onChange={setQuery}
-                onExecute={handleExecuteQuery}
-                isExecuting={isExecuting}
-                selectedDatabase={
-                  selectedConnection
-                    ? {
-                        name: selectedConnection.name,
-                        database: selectedConnection.database_name,
-                      }
-                    : undefined
-                }
-                tables={selectedConnection?.tables || []}
-                dbType={selectedConnection?.db_type.toLowerCase()}
-                results={results}
-                error={error}
-              />
-            </ResizablePanel>
-          </ResizablePanelGroup>
+          <SQLEditor
+            parameters={parameters}
+            setParameters={setParameters}
+            value={query}
+            onChange={setQuery}
+            onExecute={handleExecuteQuery}
+            isExecuting={isExecuting}
+            selectedDatabase={
+              selectedConnection
+                ? {
+                    name: selectedConnection.name,
+                    database: selectedConnection.database_name,
+                  }
+                : undefined
+            }
+            tables={databaseTables}
+            dbType={selectedConnection?.db_type.toLowerCase()}
+            results={results}
+            error={error}
+          />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

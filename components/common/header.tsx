@@ -29,36 +29,40 @@ const Header = ({
     deleteCookie("id_token");
     deleteCookie("refresh_token");
     signOut();
-    // router.replace("/");
   };
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-100 via-purple-50 to-white border-b border-purple-200 shadow-sm">
-        <div className="mx-auto px-8">
-          <div className="flex items-center justify-between h-16">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="top-4 left-4 z-40 hidden md:flex"
-              onClick={() => setIsSideMenuCollapsed(!isSideMenuCollapsed)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
+        <div className="mx-auto px-4">
+          <div className="flex items-center h-16">
             {/* Logo and Brand */}
-            <Link href="/" className="flex items-center space-x-3 group">
-              {/* Logo */}
-              <div className="w-8 h-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg rotate-45 transform -translate-y-0.5 -translate-x-0.5 group-hover:translate-y-0 group-hover:translate-x-0 transition-transform"></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg rotate-45 shadow-lg"></div>
-                <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm">
-                  GQ
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center space-x-3 group">
+                {/* Logo */}
+                <div className="w-8 h-8 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg rotate-45 transform -translate-y-0.5 -translate-x-0.5 group-hover:translate-y-0 group-hover:translate-x-0 transition-transform"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg rotate-45 shadow-lg"></div>
+                  <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm">
+                    GQ
+                  </span>
+                </div>
+                {/* Brand Name */}
+                <span className="text-lg font-semibold bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent">
+                  Gen Query
                 </span>
-              </div>
-              {/* Brand Name */}
-              <span className="flex-1 text-lg font-semibold bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent">
-                Gen Query
-              </span>
-            </Link>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-4 text-gray-500 hover:text-purple-600"
+                onClick={() => setIsSideMenuCollapsed(!isSideMenuCollapsed)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Spacer */}
+            <div className="flex-1"></div>
 
             {/* Right Section */}
             <div className="flex items-center space-x-4">

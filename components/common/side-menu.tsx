@@ -48,7 +48,7 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
             <Menu className="h-5 w-5" />
           </Button>
         </DrawerTrigger>
-        <DrawerContent side="left" className="p-0 w-[250px]">
+        <DrawerContent side="left" className="p-0 w-[200px]">
           <DrawerHeader className="border-b px-4 py-4">
             <DrawerTitle>Menu</DrawerTitle>
           </DrawerHeader>
@@ -80,7 +80,7 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
       <div
         className={cn(
           "hidden md:flex flex-col border-r bg-white transition-all duration-300",
-          isCollapsed ? "w-[70px]" : "w-[250px]"
+          isCollapsed ? "w-[70px]" : "w-[200px]"
         )}
       >
         <div className="border-b px-4 py-4">

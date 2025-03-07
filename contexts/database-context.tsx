@@ -24,12 +24,15 @@ interface DatabaseState {
   selectedConnectionId: string | null;
   isLoading: boolean;
   error: string | null;
+  movedQueryText: string | null;
 }
 
 interface DatabaseContextType extends DatabaseState {
   selectConnection: (id: string | null) => void;
   refreshConnections: () => Promise<void>;
   selectedConnection: DatabaseConnection | null;
+  movedQueryText: string | null;
+  setMovedQueryText: (text: string | null) => void;
 }
 
 // Context
@@ -45,6 +48,7 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     selectedConnectionId: null,
     isLoading: true,
     error: null,
+    movedQueryText: null,
   });
 
   // Load saved connection ID from localStorage
@@ -74,6 +78,10 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       }));
     }
+  };
+
+  const setMovedQueryText = (text: string | null) => {
+    setState((prev) => ({ ...prev, movedQueryText: text }));
   };
 
   // Initial fetch
@@ -108,6 +116,7 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     selectConnection,
     refreshConnections: fetchConnections,
     selectedConnection,
+    setMovedQueryText,
   };
 
   return (
@@ -137,4 +146,10 @@ export function useSelectedDatabase() {
 export function useDatabaseList() {
   const { connections, isLoading, error, refreshConnections } = useDatabase();
   return { databases: connections, isLoading, error, refreshConnections };
+}
+
+// Utility hook for database list
+export function useQueryDetails() {
+  const { movedQueryText, setMovedQueryText } = useDatabase();
+  return { movedQueryText, setMovedQueryText };
 }

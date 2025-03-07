@@ -1,7 +1,8 @@
 "use client";
 
+import { useQueryDetails } from "@/contexts/database-context";
 import { formatMessage } from "@/lib/utils/format-message";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Move, MoveLeft } from "lucide-react";
 import { useState } from "react";
 
 interface FormattedMessageProps {
@@ -15,6 +16,8 @@ export function FormattedMessage({
 }: FormattedMessageProps) {
   const segments = formatMessage(content);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const { setMovedQueryText } = useQueryDetails();
+  console.log("movedQueryText", setMovedQueryText);
 
   const copyToClipboard = async (text: string, index: number) => {
     await navigator.clipboard.writeText(text);
@@ -56,18 +59,28 @@ export function FormattedMessage({
           return (
             <div key={index} className="relative group">
               <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => copyToClipboard(segment.content, index)}
-                  className={`p-1.5 rounded ${
-                    isDark
-                      ? "hover:bg-white/10 text-white/60 hover:text-white"
-                      : "hover:bg-gray-200 text-gray-500 hover:text-gray-700"
-                  }`}
-                >
+                <button className={`p-1.5 rounded`}>
                   {copiedIndex === index ? (
                     <Check className="w-4 h-4" />
                   ) : (
-                    <Copy className="w-4 h-4" />
+                    <div className="flex items-center gap-4">
+                      <MoveLeft
+                        className={`w-4 h-4 ${
+                          isDark
+                            ? "hover:bg-white/10 text-white/60 hover:text-white"
+                            : "hover:bg-gray-200 text-gray-500 hover:text-gray-700"
+                        }`}
+                        onClick={() => setMovedQueryText(segment.content)}
+                      />
+                      <Copy
+                        className={`w-4 h-4 ${
+                          isDark
+                            ? "hover:bg-white/10 text-white/60 hover:text-white"
+                            : "hover:bg-gray-200 text-gray-500 hover:text-gray-700"
+                        }`}
+                        onClick={() => copyToClipboard(segment.content, index)}
+                      />
+                    </div>
                   )}
                 </button>
               </div>

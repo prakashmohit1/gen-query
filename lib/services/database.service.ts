@@ -30,6 +30,7 @@ export interface DatabaseTable {
     type: string;
     nullable: boolean;
   }[];
+  rows?: Record<string, any>[];
 }
 
 export interface DatabaseService {

@@ -12,7 +12,10 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import type { DatabaseTable } from "@/lib/services/database.service";
-import { useSelectedDatabase } from "@/contexts/database-context";
+import {
+  useQueryDetails,
+  useSelectedDatabase,
+} from "@/contexts/database-context";
 
 interface DatabaseConnection {
   id: string;
@@ -36,8 +39,9 @@ export default function EditorPage() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [results, setResults] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [parameters, setParameters] = useState<Record<string, string>>({});
   const { selectedConnection } = useSelectedDatabase();
-
+  const { movedQueryText, setMovedQueryText } = useQueryDetails();
   const handleExecuteQuery = async () => {
     if (!query.trim() || !selectedConnection) return;
 
@@ -48,11 +52,11 @@ export default function EditorPage() {
       const response = await sqlQueriesService.executeSQLQuery({
         query,
         connection_id: selectedConnection.id,
-        params: {},
+        params: parameters,
       });
 
       console.log("response", response);
-      setResults(response.result || []);
+      setResults(response || {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       setResults(null);
@@ -64,6 +68,13 @@ export default function EditorPage() {
   const onTableClick = (tableName: string) => {
     setQuery(`${query} ${tableName}`);
   };
+
+  useEffect(() => {
+    if (movedQueryText) {
+      setQuery(movedQueryText);
+      setMovedQueryText(null);
+    }
+  }, [movedQueryText]);
 
   return (
     <div className="h-screen bg-white">
@@ -78,6 +89,8 @@ export default function EditorPage() {
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={40}>
               <SQLEditor
+                parameters={parameters}
+                setParameters={setParameters}
                 value={query}
                 onChange={setQuery}
                 onExecute={handleExecuteQuery}

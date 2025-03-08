@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       error.message === "No authentication token found"
     ) {
       return NextResponse.json(
-        { error: "Authentication required" },
+        { error: error.message || "Authentication required" },
         { status: 401 }
       );
     }

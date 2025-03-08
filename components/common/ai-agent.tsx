@@ -10,6 +10,11 @@ import {
   Send,
   Table,
   Columns,
+  History,
+  MessageSquare,
+  Search,
+  Trash2,
+  PlusIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { useSelectedDatabase } from "@/contexts/database-context";
@@ -34,6 +39,13 @@ interface SuggestedQuestion {
   icon: JSX.Element;
 }
 
+interface ChatConversation {
+  id: string;
+  messages: Message[];
+  created_at: string;
+  updated_at: string;
+}
+
 interface AiAgentProps {
   isOpen: boolean;
   onClose: () => void;
@@ -54,8 +66,14 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatConversation[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [databaseItems, setDatabaseItems] = useState<DropdownItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<DropdownItem[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | null
+  >(null);
   const { selectedConnection } = useSelectedDatabase();
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -161,28 +179,41 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     setIsLoading(true);
 
     try {
-      const response = await aiAgentServices.sendMessage({
-        database_connection_id: selectedConnection?.id,
-        messages: [
-          ...messages.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-          { role: Role.USER, content: text },
-        ],
-      });
+      const updatedMessages = [
+        ...messages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+        { role: Role.USER, content: text },
+      ];
+
+      const response = await aiAgentServices.sendMessage(
+        {
+          database_connection_id: selectedConnection?.id,
+          messages: updatedMessages,
+        },
+        currentConversationId || undefined
+      );
 
       // Add assistant's response to the messages
       if (response.messages) {
-        setMessages((prev) => [
-          ...prev,
+        const newMessages = [
+          ...messages,
+          newUserMessage,
           {
-            id: prev.length + 2,
+            id: messages.length + 2,
             role: Role.ASSISTANT,
             content: response.messages.slice(-1)[0].content,
             timestamp: new Date(),
           },
-        ]);
+        ];
+
+        setMessages(newMessages);
+
+        // If this was a new conversation (POST), set the conversation ID from response
+        if (!currentConversationId && response.id) {
+          setCurrentConversationId(response.id);
+        }
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -235,6 +266,63 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     inputRef.current?.focus();
   };
 
+  const fetchChatHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const data = await aiAgentServices.getChatHistory();
+      console.log("data", data);
+      setChatHistory(data);
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const loadConversation = async (conversation: ChatConversation) => {
+    const formattedMessages = conversation.messages.map((msg, index) => ({
+      id: index + 1,
+      role: msg.role,
+      content: msg.content,
+      timestamp: new Date(),
+    }));
+    setMessages(formattedMessages);
+    setCurrentConversationId(conversation.id);
+    setShowHistory(false);
+  };
+
+  const deleteConversation = async (
+    conversationId: string,
+    event: React.MouseEvent
+  ) => {
+    event.stopPropagation();
+    try {
+      await aiAgentServices.deleteConversation(conversationId);
+      setChatHistory((prev) =>
+        prev.filter((conv) => conv.id !== conversationId)
+      );
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+    }
+  };
+
+  // Reset conversation when starting new chat
+  const handleNewChat = () => {
+    setMessages([]);
+    setCurrentConversationId(null);
+    setShowHistory(false);
+  };
+
+  // Update the history button click handler
+  const handleHistoryClick = () => {
+    fetchChatHistory();
+    setShowHistory(true);
+  };
+
+  useEffect(() => {
+    console.log("messages", messages);
+  }, [messages]);
+
   return (
     <div
       className={`relative top-[65px] right-0 h-[calc(100vh-65px)] bg-white shadow-lg transition-all duration-300 ease-in-out z-50 overflow-hidden ${
@@ -242,43 +330,157 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
       }`}
     >
       <div className="p-4 h-full flex flex-col w-80">
-        {messages.length === 0 ? (
-          <>
-            {/* Header - Only shown when no messages */}
-            <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto">
-              <div className="w-16 h-16 mb-6 flex-shrink-0">
-                <div className="w-full h-full relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 rounded-lg transform rotate-45"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Bot className="w-8 h-8 text-white" />
-                  </div>
+        {showHistory ? (
+          // Chat History View
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* History Header */}
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-purple-600" />
+                <h3 className="text-sm font-medium text-gray-900">
+                  Chat History
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowHistory(false)}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Conversation List */}
+            <div className="flex-1 overflow-y-auto">
+              {isLoadingHistory ? (
+                <div className="flex items-center justify-center py-4">
+                  <Bot className="w-5 h-5 text-purple-600 animate-spin" />
+                  <span className="ml-2 text-sm text-gray-500">
+                    Loading conversations...
+                  </span>
+                </div>
+              ) : chatHistory.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 px-4">
+                  <MessageSquare className="w-8 h-8 text-gray-300 mb-2" />
+                  <p className="text-sm text-gray-500 text-center">
+                    No conversations yet
+                  </p>
+                  <p className="text-xs text-gray-400 text-center mt-1">
+                    Start a new chat to begin
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {chatHistory.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className="group relative bg-white rounded-lg border border-gray-100 hover:border-purple-200 transition-colors cursor-pointer"
+                    >
+                      <button
+                        onClick={() => loadConversation(conversation)}
+                        className="w-full p-3 text-left"
+                      >
+                        {/* First Message */}
+                        <div className="flex items-start gap-2">
+                          <div className="p-1 bg-purple-50 rounded">
+                            <MessageSquare className="w-4 h-4 text-purple-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {conversation.messages[0]?.content}
+                            </p>
+
+                            {/* Last Response Preview */}
+                            {conversation.messages.length > 1 && (
+                              <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                                {
+                                  conversation.messages[
+                                    conversation.messages.length - 1
+                                  ]?.content
+                                }
+                              </p>
+                            )}
+
+                            {/* Metadata */}
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-xs text-gray-400">
+                                {new Date(
+                                  conversation.created_at
+                                ).toLocaleDateString()}{" "}
+                                at{" "}
+                                {new Date(
+                                  conversation.created_at
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                              <span className="text-xs text-purple-400">•</span>
+                              <span className="text-xs text-gray-400">
+                                {conversation.messages.length} messages
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={(e) => deleteConversation(conversation.id, e)}
+                        className="absolute right-2 top-2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-all"
+                        title="Delete conversation"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-400 hover:text-red-500" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : messages.length === 0 ? (
+          // Empty State - Initial View
+          <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto">
+            <div className="absolute top-0 right-0 p-2">
+              <button
+                onClick={handleHistoryClick}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <History className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="w-16 h-16 mb-6 flex-shrink-0">
+              <div className="w-full h-full relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 rounded-lg transform rotate-45"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Bot className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3 flex-shrink-0">
-                Gen Query Assistant
-              </h2>
-              <p className="text-sm text-gray-500 mb-8 text-center max-w-[80%] flex-shrink-0">
-                The Assistant can make mistakes, always review the accuracy of
-                responses.
-              </p>
-              {/* Suggested Questions */}
-              <div className="flex flex-col items-center space-y-3 flex-shrink-0">
-                {suggestedQuestions.map((question) => (
-                  <button
-                    key={question.id}
-                    onClick={() => handleSendMessage(question.text)}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-full border border-purple-200 hover:bg-purple-50 transition-colors text-gray-700 text-sm"
-                  >
-                    {question.icon}
-                    <span>{question.text}</span>
-                  </button>
-                ))}
-              </div>
             </div>
-          </>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-3 flex-shrink-0">
+              Gen Query Assistant
+            </h2>
+            <p className="text-sm text-gray-500 mb-8 text-center max-w-[80%] flex-shrink-0">
+              The Assistant can make mistakes, always review the accuracy of
+              responses.
+            </p>
+            {/* Suggested Questions */}
+            <div className="flex flex-col items-center space-y-3 flex-shrink-0">
+              {suggestedQuestions.map((question) => (
+                <button
+                  key={question.id}
+                  onClick={() => handleSendMessage(question.text)}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-full border border-purple-200 hover:bg-purple-50 transition-colors text-gray-700 text-sm"
+                >
+                  {question.icon}
+                  <span>{question.text}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         ) : (
-          // Chat interface - Shown after chat starts
+          // Chat View
           <div className="flex-1 flex flex-col min-h-0">
+            {/* Chat Header */}
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 relative">
@@ -291,13 +493,30 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
                   Gen Query Assistant
                 </span>
               </div>
-              <button
-                onClick={onClose}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleNewChat}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  title="New Chat"
+                >
+                  <PlusIcon className="w-4 h-4 text-gray-500" />
+                </button>
+                <button
+                  onClick={handleHistoryClick}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <History className="w-4 h-4 text-gray-500" />
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
+              </div>
             </div>
+
+            {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0">
               {messages.map((message) => (
                 <div

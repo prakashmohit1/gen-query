@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 const API_BASE_URL = "https://gen-query-ai.onrender.com/api/v1";
 
@@ -35,12 +36,29 @@ let retryCount = 0;
 export async function fetchFromApi(path: string, init?: RequestInit) {
   const cookieStore = await cookies();
   const idToken = cookieStore.get("id_token");
+  const headers = new Headers(init?.headers);
+  const refreshToken = cookieStore.get("refresh_token")?.value ?? "";
 
-  if (!idToken?.value) {
-    throw new Error("No authentication token found");
+  if (!refreshToken) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
-  const headers = new Headers(init?.headers);
+  if (!idToken?.value) {
+    const refreshedTokens = await refreshIdToken(refreshToken);
+    headers.set("Authorization", `Bearer ${refreshedTokens.id_token}`);
+
+    cookieStore.set("id_token", refreshedTokens.id_token, {
+      path: "/",
+      maxAge: refreshedTokens.expires_in,
+    });
+
+    if (refreshedTokens.refresh_token) {
+      cookieStore.set("refresh_token", refreshedTokens.refresh_token, {
+        path: "/",
+        maxAge: refreshedTokens.expires_in,
+      });
+    }
+  }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,

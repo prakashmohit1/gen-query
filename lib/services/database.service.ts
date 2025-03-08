@@ -1,5 +1,8 @@
 import { getCookie } from "@/lib/utils";
 import { sqlQueriesService } from "./sql-queries";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { signOut } from "next-auth/react";
 
 export interface DatabaseConnection {
   id: string;
@@ -79,6 +82,10 @@ class DatabaseServiceImpl implements DatabaseService {
         Authorization: `Bearer ${getCookie("id_token")}`,
       },
     });
+    console.log("response", response.status);
+    if (response.status === 401) {
+      signOut();
+    }
     if (!response.ok) {
       throw new Error("Failed to fetch database connections");
     }
@@ -162,7 +169,7 @@ class DatabaseServiceImpl implements DatabaseService {
             TABLE_SCHEMA = DATABASE();`,
     };
     const response = await sqlQueriesService.executeSQLQuery({
-      query: TABLE_QUERY[db_type],
+      query: TABLE_QUERY[db_type as keyof typeof TABLE_QUERY],
       connection_id,
       params: {},
     });

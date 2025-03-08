@@ -9,6 +9,9 @@ import {
   Table2,
   Loader2,
   FileCode,
+  Trash2,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -41,6 +44,53 @@ interface DatabaseConnection {
 
 type TabType = "databases" | "workspaces";
 
+// Add DeleteConfirmationDialog component
+const DeleteConfirmationDialog = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  queryName,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  queryName: string;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/30" onClick={onClose} />
+      <div className="relative bg-white rounded-lg shadow-lg p-6 max-w-sm w-full mx-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-red-100 rounded-full">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">Delete Query</h3>
+        </div>
+        <p className="text-gray-600 mb-2">
+          Are you sure you want to delete this query?
+        </p>
+        <p className="text-sm text-gray-500 mb-6 break-all">"{queryName}"</p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function DatabaseList({
   onTableClick,
 }: {
@@ -55,6 +105,12 @@ export function DatabaseList({
   >({});
   const [savedQueries, setSavedQueries] = useState<any[]>([]);
   const [isLoadingQueries, setIsLoadingQueries] = useState(false);
+  const [deletingQueryId, setDeletingQueryId] = useState<string | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [queryToDelete, setQueryToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const { databases } = useDatabaseList();
   const { selectedConnection, selectConnection } = useSelectedDatabase();
@@ -119,8 +175,33 @@ export function DatabaseList({
     }
   }, [databases, selectedConnection, selectConnection]);
 
+  const handleDeleteQuery = async (queryId: string) => {
+    try {
+      setDeletingQueryId(queryId);
+      await sqlQueriesService.deleteSQLQuery(queryId);
+      // Fetch fresh queries after deletion
+      await fetchSavedQueries();
+      setShowDeleteConfirmation(false);
+      setQueryToDelete(null);
+    } catch (error) {
+      console.error("Error deleting query:", error);
+      alert("Failed to delete query");
+    } finally {
+      setDeletingQueryId(null);
+    }
+  };
+
   return (
     <div className="h-full border-r bg-white w-[280px]">
+      <DeleteConfirmationDialog
+        isOpen={showDeleteConfirmation}
+        onClose={() => {
+          setShowDeleteConfirmation(false);
+          setQueryToDelete(null);
+        }}
+        onConfirm={() => queryToDelete && handleDeleteQuery(queryToDelete.id)}
+        queryName={queryToDelete?.name || ""}
+      />
       <div className="p-4 border-b">
         <div className="flex space-x-2">
           <button
@@ -276,20 +357,39 @@ export function DatabaseList({
                 savedQueries.map((query) => (
                   <div
                     key={query.id}
-                    className="flex items-center gap-2 px-2 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer"
+                    className="group flex items-center gap-2 px-2 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer"
                     onClick={() => {
                       setMovedQueryText(query.query_text);
                     }}
                   >
                     <FileCode className="w-4 h-4 text-purple-500" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[10px]  leading-[12px] truncate">
+                      <div className="text-[10px] leading-[12px] truncate">
                         {query.name || query.query_text || "Untitled Query"}
                       </div>
                       <div className="text-[8px] leading-[10px] text-gray-400">
                         {format(new Date(query.created_at), "MMM d, yyyy")}
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setQueryToDelete({
+                          id: query.id,
+                          name:
+                            query.name || query.query_text || "Untitled Query",
+                        });
+                        setShowDeleteConfirmation(true);
+                      }}
+                      className="p-1 hover:bg-red-50 rounded transition-colors"
+                      title="Delete query"
+                    >
+                      {deletingQueryId === query.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-red-500" />
+                      ) : (
+                        <Trash2 className="w-3 h-3 text-red-400 hover:text-red-500" />
+                      )}
+                    </button>
                   </div>
                 ))
               )}

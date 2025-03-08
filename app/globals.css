@@ -140,3 +140,7 @@
 .animation-delay-400 {
   animation-delay: 0.4s;
 }
+
+.remove-table-class > div {
+  display: unset !important;
+}

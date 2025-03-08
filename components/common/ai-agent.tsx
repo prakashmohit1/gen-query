@@ -127,6 +127,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   const [conversationToDelete, setConversationToDelete] = useState<
     string | null
   >(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const suggestedQuestions: SuggestedQuestion[] = [
     {
@@ -392,7 +393,10 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   };
 
   useEffect(() => {
-    console.log("messages", messages);
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+    }
   }, [messages]);
 
   return (
@@ -597,7 +601,10 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0">
+            <div
+              className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0"
+              ref={messagesContainerRef}
+            >
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -615,7 +622,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
                     <div
                       className={`p-3 rounded-lg ${
                         message.role === Role.USER
-                          ? "bg-purple-600 text-white"
+                          ? "bg-purple-100 text-purple-600"
                           : "bg-gray-200"
                       }`}
                     >

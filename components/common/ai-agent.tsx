@@ -15,6 +15,7 @@ import {
   Search,
   Trash2,
   PlusIcon,
+  AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
 import { useSelectedDatabase } from "@/contexts/database-context";
@@ -61,6 +62,52 @@ interface DropdownItem {
   schema?: string;
 }
 
+const DeleteConfirmationDialog = ({
+  isOpen,
+  onClose,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/30" onClick={onClose}></div>
+      <div className="relative bg-white rounded-lg shadow-lg p-6 max-w-sm w-full mx-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-red-100 rounded-full">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Delete Conversation
+          </h3>
+        </div>
+        <p className="text-gray-600 mb-6">
+          Are you sure you want to delete this conversation? This action cannot
+          be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -76,6 +123,10 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   >(null);
   const { selectedConnection } = useSelectedDatabase();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<
+    string | null
+  >(null);
 
   const suggestedQuestions: SuggestedQuestion[] = [
     {
@@ -296,13 +347,34 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     event: React.MouseEvent
   ) => {
     event.stopPropagation();
+    setConversationToDelete(conversationId);
+    setShowDeleteConfirmation(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!conversationToDelete) return;
+
     try {
-      await aiAgentServices.deleteConversation(conversationId);
+      await aiAgentServices.deleteConversation(conversationToDelete);
+
+      // Update local state to remove the deleted conversation
       setChatHistory((prev) =>
-        prev.filter((conv) => conv.id !== conversationId)
+        prev.filter((conv) => conv.id !== conversationToDelete)
       );
+
+      // If the deleted conversation was the current one, reset the chat
+      if (currentConversationId === conversationToDelete) {
+        setMessages([]);
+        setCurrentConversationId(null);
+        setShowHistory(false);
+      }
     } catch (error) {
       console.error("Error deleting conversation:", error);
+      // Show error message to user
+      alert("Failed to delete conversation. Please try again.");
+    } finally {
+      setShowDeleteConfirmation(false);
+      setConversationToDelete(null);
     }
   };
 
@@ -329,6 +401,14 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
         isOpen ? "w-80" : "w-0"
       }`}
     >
+      <DeleteConfirmationDialog
+        isOpen={showDeleteConfirmation}
+        onClose={() => {
+          setShowDeleteConfirmation(false);
+          setConversationToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+      />
       <div className="p-4 h-full flex flex-col w-80">
         {showHistory ? (
           // Chat History View
@@ -559,95 +639,101 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
           </div>
         )}
 
-        {/* Input Area - Always shown */}
-        <div className="relative flex-shrink-0 mt-auto">
-          {showDropdown && (
-            <div className="absolute bottom-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mb-1 max-h-[300px] overflow-y-auto">
-              <div className="sticky top-0 bg-gray-50 px-3 py-1.5 border-b border-gray-200">
-                <div className="text-sm font-medium text-gray-700">Tables</div>
-              </div>
-              <div className="py-0.5">
-                {/* Tables Section */}
-                {filteredItems
-                  .filter((item) => item.type === "table")
-                  .map((table) => (
-                    <button
-                      key={table.id}
-                      onClick={() => handleItemSelect(table)}
-                      className="w-full px-3 py-1 text-left flex items-center hover:bg-gray-50 text-sm group"
-                    >
-                      <Table className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600" />
-                      <span className="font-medium text-gray-900">
-                        {table.label}
-                      </span>
-                      {table.schema && (
-                        <span className="ml-2 text-gray-500 text-xs">
-                          {table.schema}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-              </div>
-
-              <div className="sticky top-0 bg-gray-50 px-3 py-1.5 border-y border-gray-200">
-                <div className="text-sm font-medium text-gray-700">Columns</div>
-              </div>
-              <div className="py-0.5">
-                {/* Columns Section */}
-                {filteredItems
-                  .filter((item) => item.type === "column")
-                  .map((column) => (
-                    <button
-                      key={column.id}
-                      onClick={() => handleItemSelect(column)}
-                      className="w-full px-3 py-1 text-left flex items-center hover:bg-gray-50 text-sm group"
-                    >
-                      <Columns className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600" />
-                      <span className="text-gray-900">{column.label}</span>
-                      <span className="ml-auto text-gray-500 text-xs">
-                        {column.parentTable}
-                      </span>
-                    </button>
-                  ))}
-                {filteredItems.length === 0 && (
-                  <div className="px-3 py-1 text-sm text-gray-500">
-                    No matching tables or columns found
+        {/* Input Area - Only shown when chat history is not open */}
+        {!showHistory && (
+          <div className="relative flex-shrink-0 mt-auto">
+            {showDropdown && (
+              <div className="absolute bottom-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mb-1 max-h-[300px] overflow-y-auto">
+                <div className="sticky top-0 bg-gray-50 px-3 py-1.5 border-b border-gray-200">
+                  <div className="text-sm font-medium text-gray-700">
+                    Tables
                   </div>
-                )}
+                </div>
+                <div className="py-0.5">
+                  {/* Tables Section */}
+                  {filteredItems
+                    .filter((item) => item.type === "table")
+                    .map((table) => (
+                      <button
+                        key={table.id}
+                        onClick={() => handleItemSelect(table)}
+                        className="w-full px-3 py-1 text-left flex items-center hover:bg-gray-50 text-sm group"
+                      >
+                        <Table className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600" />
+                        <span className="font-medium text-gray-900">
+                          {table.label}
+                        </span>
+                        {table.schema && (
+                          <span className="ml-2 text-gray-500 text-xs">
+                            {table.schema}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                </div>
+
+                <div className="sticky top-0 bg-gray-50 px-3 py-1.5 border-y border-gray-200">
+                  <div className="text-sm font-medium text-gray-700">
+                    Columns
+                  </div>
+                </div>
+                <div className="py-0.5">
+                  {/* Columns Section */}
+                  {filteredItems
+                    .filter((item) => item.type === "column")
+                    .map((column) => (
+                      <button
+                        key={column.id}
+                        onClick={() => handleItemSelect(column)}
+                        className="w-full px-3 py-1 text-left flex items-center hover:bg-gray-50 text-sm group"
+                      >
+                        <Columns className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600" />
+                        <span className="text-gray-900">{column.label}</span>
+                        <span className="ml-auto text-gray-500 text-xs">
+                          {column.parentTable}
+                        </span>
+                      </button>
+                    ))}
+                  {filteredItems.length === 0 && (
+                    <div className="px-3 py-1 text-sm text-gray-500">
+                      No matching tables or columns found
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          <textarea
-            ref={inputRef}
-            value={inputMessage}
-            onChange={(e) => handleInputChange(e)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            placeholder="@ for objects or / for commands"
-            className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none overflow-hidden"
-            disabled={isLoading}
-            rows={1}
-            style={{
-              minHeight: "44px",
-              maxHeight: "120px",
-            }}
-          />
-          <button
-            onClick={() => handleSendMessage()}
-            className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors ${
-              !inputMessage.trim() || isLoading
-                ? "text-gray-400 cursor-not-allowed"
-                : "text-purple-600 hover:bg-purple-50 border border-purple-200"
-            }`}
-            disabled={!inputMessage.trim() || isLoading}
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </div>
+            )}
+            <textarea
+              ref={inputRef}
+              value={inputMessage}
+              onChange={(e) => handleInputChange(e)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder="@ for objects or / for commands"
+              className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none overflow-hidden"
+              disabled={isLoading}
+              rows={1}
+              style={{
+                minHeight: "44px",
+                maxHeight: "120px",
+              }}
+            />
+            <button
+              onClick={() => handleSendMessage()}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors ${
+                !inputMessage.trim() || isLoading
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-purple-600 hover:bg-purple-50 border border-purple-200"
+              }`}
+              disabled={!inputMessage.trim() || isLoading}
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

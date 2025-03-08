@@ -78,11 +78,7 @@ export default function EditorPage() {
   return (
     <div className="h-screen bg-white">
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-          <DatabaseList onTableClick={onTableClick} />
-        </ResizablePanel>
-
-        <ResizableHandle />
+        <DatabaseList onTableClick={onTableClick} />
 
         <ResizablePanel defaultSize={80}>
           <ResizablePanelGroup direction="vertical">

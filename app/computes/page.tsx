@@ -105,7 +105,6 @@ export default function ComputePage() {
           is_active: !connection.is_active,
         }
       );
-      console.log("data11", data);
       refreshConnections(); // Refresh the list
     } catch (err) {
       console.error("Error updating connection status:", err);

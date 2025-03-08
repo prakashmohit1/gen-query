@@ -9,7 +9,6 @@ const ProfileDropdown = ({ session }: any) => {
   const router = useRouter();
 
   const handleLogout = () => {
-    console.log("Logging out...");
     logout();
     signOut();
     router.replace("/");

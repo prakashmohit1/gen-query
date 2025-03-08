@@ -39,7 +39,7 @@ const Layout = memo(function Layout({ children, session }: LayoutProps) {
           <div
             className={cn(
               "w-full flex-1 bg-white rounded mt-[calc(64px)]",
-              isAIAgentOpen ? "mr-80" : "",
+
               "transition-all duration-300"
             )}
           >

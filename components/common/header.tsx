@@ -25,7 +25,6 @@ const Header = ({
 }: any) => {
   const router = useRouter();
   const handleLogout = () => {
-    console.log("Logging out...");
     deleteCookie("id_token");
     deleteCookie("refresh_token");
     signOut();

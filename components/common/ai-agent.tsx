@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Bot,
   Sparkles,
@@ -14,6 +14,7 @@ import {
 import Image from "next/image";
 import { useSelectedDatabase } from "@/contexts/database-context";
 import { aiAgentServices } from "@/lib/services/ai-agent";
+import { databaseService } from "@/lib/services/database.service";
 import Role from "@/app/enums/role";
 import { FormattedMessage } from "./formatted-message";
 
@@ -45,6 +46,7 @@ interface DropdownItem {
   icon: JSX.Element;
   type: "table" | "column";
   parentTable?: string;
+  schema?: string;
 }
 
 const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
@@ -55,6 +57,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   const [databaseItems, setDatabaseItems] = useState<DropdownItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<DropdownItem[]>([]);
   const { selectedConnection } = useSelectedDatabase();
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const suggestedQuestions: SuggestedQuestion[] = [
     {
@@ -74,34 +77,56 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
       if (!selectedConnection) return;
 
       try {
-        const tables = await fetch(
-          `/api/database/${selectedConnection.id}/tables`
-        ).then((res) => res.json());
+        const tablesData = await databaseService.getDatabaseTables(
+          selectedConnection.id,
+          selectedConnection.db_type
+        );
+
+        if (!tablesData?.rows) return;
 
         const items: DropdownItem[] = [];
+        const processedTables = new Set<string>();
 
-        for (const table of tables) {
-          // Add table
-          items.push({
-            id: `table-${table.name}`,
-            label: table.name,
-            icon: <Table className="w-4 h-4" />,
-            type: "table",
-          });
+        // Process the rows to group by table
+        tablesData.rows.forEach((row) => {
+          const tableName = row[0]; // table_name
+          const columnName = row[1]; // column_name
+          const dataType = row[2]; // data_type
+          const schemaName = row.length > 3 ? row[3] : "default"; // schema name if available
 
-          // Add columns for this table
-          if (table.columns) {
-            for (const column of table.columns) {
-              items.push({
-                id: `column-${table.name}-${column.name}`,
-                label: column.name,
-                icon: <Columns className="w-4 h-4" />,
-                type: "column",
-                parentTable: table.name,
-              });
-            }
+          // Add table if not already added
+          if (!processedTables.has(tableName)) {
+            items.push({
+              id: `table-${tableName}`,
+              label: tableName,
+              icon: <Table className="w-4 h-4" />,
+              type: "table",
+              schema: schemaName,
+            });
+            processedTables.add(tableName);
           }
-        }
+
+          // Add column
+          items.push({
+            id: `column-${tableName}-${columnName}`,
+            label: columnName,
+            icon: <Columns className="w-4 h-4" />,
+            type: "column",
+            parentTable: tableName,
+            schema: schemaName,
+          });
+        });
+
+        // Sort items: first by schema, then by table name
+        items.sort((a, b) => {
+          if (a.schema !== b.schema) {
+            return (a.schema || "").localeCompare(b.schema || "");
+          }
+          if (a.type !== b.type) {
+            return a.type === "table" ? -1 : 1;
+          }
+          return a.label.localeCompare(b.label);
+        });
 
         setDatabaseItems(items);
       } catch (error) {
@@ -111,6 +136,15 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
 
     fetchDatabaseItems();
   }, [selectedConnection]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = "44px";
+      const scrollHeight = inputRef.current.scrollHeight;
+      inputRef.current.style.height = Math.min(scrollHeight, 120) + "px";
+    }
+  }, [inputMessage]);
 
   const handleSendMessage = async (text: string = inputMessage) => {
     if (!text.trim()) return;
@@ -158,14 +192,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setInputMessage(value);
 
@@ -199,15 +226,18 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     const parts = inputMessage.split("@");
     const prefix = parts.slice(0, -1).join("@");
     const insertText =
-      item.type === "column" ? `${item.parentTable}.${item.label}` : item.label;
+      item.type === "column"
+        ? `"${item.parentTable}.${item.label}"`
+        : `"${item.label}"`;
     const newValue = `${prefix}${insertText} `;
     setInputMessage(newValue);
     setShowDropdown(false);
+    inputRef.current?.focus();
   };
 
   return (
     <div
-      className={`absolute top-[65px] right-0 h-[calc(100vh-65px)] bg-white shadow-lg transition-all duration-300 ease-in-out z-50 overflow-hidden ${
+      className={`relative top-[65px] right-0 h-[calc(100vh-65px)] bg-white shadow-lg transition-all duration-300 ease-in-out z-50 overflow-hidden ${
         isOpen ? "w-80" : "w-0"
       }`}
     >
@@ -313,44 +343,79 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
         {/* Input Area - Always shown */}
         <div className="relative flex-shrink-0 mt-auto">
           {showDropdown && (
-            <div className="absolute bottom-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mb-1 max-h-[200px] overflow-y-auto">
-              {filteredItems.length > 0 ? (
-                filteredItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => handleItemSelect(item)}
-                    className="w-full px-4 py-2 text-left flex items-center space-x-2 hover:bg-purple-50 transition-colors"
-                  >
-                    {item.icon}
-                    <span className="text-sm text-gray-700">
-                      {item.type === "column" ? (
-                        <span className="flex items-center space-x-1">
-                          <span className="text-gray-500">
-                            {item.parentTable}.
-                          </span>
-                          <span>{item.label}</span>
+            <div className="absolute bottom-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mb-1 max-h-[300px] overflow-y-auto">
+              <div className="sticky top-0 bg-gray-50 px-3 py-1.5 border-b border-gray-200">
+                <div className="text-sm font-medium text-gray-700">Tables</div>
+              </div>
+              <div className="py-0.5">
+                {/* Tables Section */}
+                {filteredItems
+                  .filter((item) => item.type === "table")
+                  .map((table) => (
+                    <button
+                      key={table.id}
+                      onClick={() => handleItemSelect(table)}
+                      className="w-full px-3 py-1 text-left flex items-center hover:bg-gray-50 text-sm group"
+                    >
+                      <Table className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600" />
+                      <span className="font-medium text-gray-900">
+                        {table.label}
+                      </span>
+                      {table.schema && (
+                        <span className="ml-2 text-gray-500 text-xs">
+                          {table.schema}
                         </span>
-                      ) : (
-                        item.label
                       )}
-                    </span>
-                  </button>
-                ))
-              ) : (
-                <div className="px-4 py-2 text-sm text-gray-500">
-                  No matching tables or columns found
-                </div>
-              )}
+                    </button>
+                  ))}
+              </div>
+
+              <div className="sticky top-0 bg-gray-50 px-3 py-1.5 border-y border-gray-200">
+                <div className="text-sm font-medium text-gray-700">Columns</div>
+              </div>
+              <div className="py-0.5">
+                {/* Columns Section */}
+                {filteredItems
+                  .filter((item) => item.type === "column")
+                  .map((column) => (
+                    <button
+                      key={column.id}
+                      onClick={() => handleItemSelect(column)}
+                      className="w-full px-3 py-1 text-left flex items-center hover:bg-gray-50 text-sm group"
+                    >
+                      <Columns className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600" />
+                      <span className="text-gray-900">{column.label}</span>
+                      <span className="ml-auto text-gray-500 text-xs">
+                        {column.parentTable}
+                      </span>
+                    </button>
+                  ))}
+                {filteredItems.length === 0 && (
+                  <div className="px-3 py-1 text-sm text-gray-500">
+                    No matching tables or columns found
+                  </div>
+                )}
+              </div>
             </div>
           )}
-          <input
-            type="text"
+          <textarea
+            ref={inputRef}
             value={inputMessage}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
+            onChange={(e) => handleInputChange(e)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
             placeholder="@ for objects or / for commands"
-            className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400"
+            className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none overflow-hidden"
             disabled={isLoading}
+            rows={1}
+            style={{
+              minHeight: "44px",
+              maxHeight: "120px",
+            }}
           />
           <button
             onClick={() => handleSendMessage()}

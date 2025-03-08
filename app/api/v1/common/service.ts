@@ -41,25 +41,13 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
   }
 
   const headers = new Headers(init?.headers);
-  // headers.set("Content-Type", "application/json");
-  // headers.set("Authorization", `Bearer ${headers.values}`);
-
-  console.log("url1111", `${API_BASE_URL}${path}`);
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,
   });
 
-  // Log response status and headers for debugging
-  console.log("Response status:", response.status);
-  console.log(
-    "Response headers:",
-    Object.fromEntries(response.headers.entries())
-  );
-
   if (response.status === 401) {
-    console.log("Access Token Expired! Refreshing...");
     try {
       const refreshedTokens = await refreshIdToken(
         cookieStore.get("refresh_token")?.value ?? ""

@@ -15,7 +15,6 @@ export async function GET(request: Request) {
 
     // Handle unauthorized access
     if (response.status === 401) {
-      console.log("response", response);
       return NextResponse.json({ error: response.detail }, { status: 401 });
     }
 
@@ -32,7 +31,6 @@ export async function GET(request: Request) {
     } catch (parseError) {
       console.error("Failed to parse JSON response:", parseError);
       const text = await response.text();
-      console.log("Raw response:", text);
       return NextResponse.json(
         { error: "Invalid JSON response from server" },
         { status: 500 }
@@ -71,7 +69,6 @@ export async function POST(request: Request) {
 
     try {
       const data = await response.json();
-      console.log("data", data);
       if (!response.ok) {
         return NextResponse.json(
           { error: data.message || "An error occurred" },
@@ -82,7 +79,6 @@ export async function POST(request: Request) {
     } catch (parseError) {
       console.error("Failed to parse JSON response:", parseError);
       const text = await response.text();
-      console.log("Raw response:", text);
       return NextResponse.json(
         { error: "Invalid JSON response from server" },
         { status: 500 }
@@ -129,7 +125,6 @@ export async function PUT(request: Request) {
     } catch (parseError) {
       console.error("Failed to parse JSON response:", parseError);
       const text = await response.text();
-      console.log("Raw response:", text);
       return NextResponse.json(
         { error: "Invalid JSON response from server" },
         { status: 500 }
@@ -174,7 +169,6 @@ export async function DELETE(request: Request) {
     } catch (parseError) {
       console.error("Failed to parse JSON response:", parseError);
       const text = await response.text();
-      console.log("Raw response:", text);
       return NextResponse.json(
         { error: "Invalid JSON response from server" },
         { status: 500 }

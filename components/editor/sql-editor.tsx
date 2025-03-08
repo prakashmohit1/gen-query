@@ -376,8 +376,6 @@ export function SQLEditor({
     // If there's selected text, execute only that portion
     // Otherwise, execute the entire query
     const queryToExecute = selectedText || value;
-    console.log("selection", selection);
-    console.log("queryToExecute", queryToExecute);
 
     if (queryToExecute.trim()) {
       onExecute(queryToExecute, parameters);

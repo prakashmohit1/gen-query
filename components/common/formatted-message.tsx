@@ -17,7 +17,6 @@ export function FormattedMessage({
   const segments = formatMessage(content);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const { setMovedQueryText } = useQueryDetails();
-  console.log("movedQueryText", setMovedQueryText);
 
   const copyToClipboard = async (text: string, index: number) => {
     await navigator.clipboard.writeText(text);

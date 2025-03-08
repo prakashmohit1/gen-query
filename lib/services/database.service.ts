@@ -148,8 +148,18 @@ class DatabaseServiceImpl implements DatabaseService {
 
   async getDatabaseTables(connection_id: string, db_type: string) {
     const TABLE_QUERY = {
-      postgresql: `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';`,
-      mysql: `SHOW TABLES;`,
+      postgresql: `SELECT table_name, column_name, data_type
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+            ORDER BY table_name, ordinal_position;`,
+      mysql: `SELECT 
+            TABLE_NAME AS 'table_name',
+            COLUMN_NAME AS 'column_name',
+            DATA_TYPE AS 'data_type'
+        FROM 
+            INFORMATION_SCHEMA.COLUMNS
+        WHERE 
+            TABLE_SCHEMA = DATABASE();`,
     };
     const response = await sqlQueriesService.executeSQLQuery({
       query: TABLE_QUERY[db_type],

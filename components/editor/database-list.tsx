@@ -39,10 +39,6 @@ interface DatabaseConnection {
   status?: string;
 }
 
-interface ConnectionWithTables extends DatabaseConnection {
-  tables?: DatabaseTable[];
-}
-
 type TabType = "databases" | "workspaces";
 
 export function DatabaseList({
@@ -52,6 +48,7 @@ export function DatabaseList({
 }) {
   const [activeTab, setActiveTab] = useState<TabType>("databases");
   const [expandedConnections, setExpandedConnections] = useState<string[]>([]);
+  const [expandedTables, setExpandedTables] = useState<string[]>([]);
   const [loadingTables, setLoadingTables] = useState<string[]>([]);
   const [connectionTables, setConnectionTables] = useState<
     Record<string, DatabaseTable>
@@ -95,7 +92,6 @@ export function DatabaseList({
     if (!connectionTables[connectionId]) {
       setLoadingTables((prev) => [...prev, connectionId]);
       try {
-        console.log("selectedConnection?.db_type", selectedConnection?.db_type);
         const table = await databaseService.getDatabaseTables(
           connectionId,
           db_type
@@ -124,7 +120,7 @@ export function DatabaseList({
   }, [databases, selectedConnection, selectConnection]);
 
   return (
-    <div className="h-full border-r bg-white">
+    <div className="h-full border-r bg-white w-[280px]">
       <div className="p-4 border-b">
         <div className="flex space-x-2">
           <button
@@ -202,19 +198,63 @@ export function DatabaseList({
                           No tables found
                         </div>
                       ) : (
-                        connectionTables[connection.id]?.rows?.map(
-                          (table) =>
-                            table[0] && (
-                              <div
-                                onClick={() => onTableClick(table[0])}
-                                key={table[0]}
-                                className="flex items-center gap-2 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer"
-                              >
-                                <Table2 className="w-4 h-4" />
-                                <span>{table[0]}</span>
+                        // Group tables and their columns
+                        (() => {
+                          const tableMap = new Map();
+                          connectionTables[connection.id]?.rows?.forEach(
+                            (row) => {
+                              const tableName = row[0];
+                              const columnName = row[1];
+                              if (!tableMap.has(tableName)) {
+                                tableMap.set(tableName, []);
+                              }
+                              if (columnName) {
+                                tableMap.get(tableName).push(columnName);
+                              }
+                            }
+                          );
+
+                          return Array.from(tableMap.entries()).map(
+                            ([tableName, columns]) => (
+                              <div key={tableName} className="space-y-0.5">
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // onTableClick(tableName);
+                                    setExpandedTables((prev) =>
+                                      prev.includes(tableName)
+                                        ? prev.filter((t) => t !== tableName)
+                                        : [...prev, tableName]
+                                    );
+                                  }}
+                                  className="flex items-center gap-2 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer font-medium"
+                                >
+                                  <Table2 className="w-4 h-4" />
+                                  <span className="flex-1">{tableName}</span>
+                                  <ChevronRight
+                                    className={cn(
+                                      "w-3 h-3 transition-transform",
+                                      expandedTables.includes(tableName) &&
+                                        "rotate-90"
+                                    )}
+                                  />
+                                </div>
+                                {expandedTables.includes(tableName) && (
+                                  <div className="ml-6 border-l border-gray-200 pl-2">
+                                    {columns.map((columnName: string) => (
+                                      <div
+                                        key={`${tableName}-${columnName}`}
+                                        className="flex items-center gap-2 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 rounded-md"
+                                      >
+                                        <span>{columnName}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             )
-                        )
+                          );
+                        })()
                       )}
                     </div>
                   )}

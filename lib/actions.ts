@@ -89,7 +89,6 @@ export async function loginWithGoogle() {
 }
 
 export async function logout() {
-  console.log("Logging out...");
   removeCookie("id_token");
   removeCookie("refresh_token");
 }

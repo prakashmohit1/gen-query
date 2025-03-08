@@ -26,7 +26,6 @@ export async function POST(request: Request) {
     } catch (parseError) {
       console.error("Failed to parse JSON response:", parseError);
       const text = await response.text();
-      console.log("Raw response:", text);
       return NextResponse.json(
         { error: "Invalid JSON response from server" },
         { status: 500 }

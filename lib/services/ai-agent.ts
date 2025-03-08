@@ -21,7 +21,6 @@ export class AiAgentService {
 
   async sendMessage(request: ChatRequest): Promise<AiAgentResponse> {
     try {
-      console.log('getCookie("id_token")', getCookie("id_token"));
       const response = await fetch(
         `${this.baseUrl}/api/v1/chat-conversations`,
         {

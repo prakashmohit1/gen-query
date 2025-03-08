@@ -157,7 +157,7 @@ export function ResultsTable({
   }
 
   return (
-    <div className="h-full">
+    <div className="h-full flex flex-col">
       <div className="flex items-center justify-between p-4 border-b">
         <div className="text-sm font-medium text-purple-900">Query Results</div>
         <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export function ResultsTable({
             onClick={() => setShowFilters(!showFilters)}
           >
             <Search className="w-4 h-4 mr-2" />
-            {showFilters ? "Hide Filters" : "Show Filters"}
+            {showFilters ? "Hide Search" : "Show Search"}
           </Button>
           <Button variant="outline" size="sm" onClick={downloadCSV}>
             <Download className="w-4 h-4 mr-2" />
@@ -186,50 +186,62 @@ export function ResultsTable({
         </div>
       </div>
 
-      <ScrollArea className="h-[calc(100%-57px)]">
-        <div className="p-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((column: any) => (
-                  <TableHead key={column.name}>
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => handleSort(column.name)}
-                        className="flex items-center gap-2 hover:text-purple-600"
+      <div className="flex-1 min-h-0 relative">
+        <div className="absolute inset-0 overflow-auto">
+          <div className="min-w-full inline-block align-middle">
+            <div className="overflow-hidden">
+              <Table>
+                <TableHeader className="sticky top-0 bg-white z-10">
+                  <TableRow>
+                    {columns.map((column: any) => (
+                      <TableHead
+                        key={column.name}
+                        className="whitespace-nowrap bg-white"
+                        style={{ minWidth: "150px" }}
                       >
-                        {column.name}
-                        <ArrowUpDown className="w-4 h-4" />
-                      </button>
-                      {showFilters && (
-                        <Input
-                          placeholder="Filter..."
-                          value={filters[column.name] || ""}
-                          onChange={(e) =>
-                            handleFilterChange(column.name, e.target.value)
-                          }
-                          className="h-7 text-sm"
-                        />
-                      )}
-                    </div>
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row: any, i: number) => (
-                <TableRow key={i}>
-                  {row.map((data: any, j: number) => (
-                    <TableCell key={`${i}-${j}`}>
-                      {data?.toString() ?? "NULL"}
-                    </TableCell>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => handleSort(column.name)}
+                            className="flex items-center gap-2 hover:text-purple-600"
+                          >
+                            {column.name}
+                            <ArrowUpDown className="w-4 h-4" />
+                          </button>
+                          {showFilters && (
+                            <Input
+                              placeholder="Filter..."
+                              value={filters[column.name] || ""}
+                              onChange={(e) =>
+                                handleFilterChange(column.name, e.target.value)
+                              }
+                              className="h-7 text-sm"
+                            />
+                          )}
+                        </div>
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((row: any, i: number) => (
+                    <TableRow key={i}>
+                      {row.map((data: any, j: number) => (
+                        <TableCell
+                          key={`${i}-${j}`}
+                          className="whitespace-nowrap"
+                          style={{ minWidth: "150px" }}
+                        >
+                          {data?.toString() ?? "NULL"}
+                        </TableCell>
+                      ))}
+                    </TableRow>
                   ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         </div>
-      </ScrollArea>
+      </div>
 
       <Dialog open={showPerformance} onOpenChange={setShowPerformance}>
         <DialogContent className="sm:max-w-[600px]">

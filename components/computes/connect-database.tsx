@@ -184,7 +184,6 @@ export default function ConnectDatabase({
           data.db_type?.toLowerCase() || database?.name?.toLowerCase() || "",
       };
 
-      console.log("payload", payload);
       if (connectionData?.id) {
         await databaseService.updateDatabaseConnection(
           connectionData.id,

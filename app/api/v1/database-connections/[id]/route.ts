@@ -37,7 +37,6 @@ export async function GET(
     } catch (parseError) {
       console.error("Failed to parse JSON response:", parseError);
       const text = await response.text();
-      console.log("Raw response:", text);
       return NextResponse.json(
         { error: "Invalid JSON response from server" },
         { status: 500 }
@@ -74,10 +73,6 @@ export async function PUT(
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    console.log(
-      "`/database-connections/${params.id}`",
-      `/database-connections/${params.id}`
-    );
     const response = await fetchFromApi(`/database-connections/${params.id}`, {
       method: "PUT",
       body: JSON.stringify(body),
@@ -100,7 +95,6 @@ export async function PUT(
     } catch (parseError) {
       console.error("Failed to parse JSON response:", parseError);
       const text = await response.text();
-      console.log("Raw response:", text);
       return NextResponse.json(
         { error: "Invalid JSON response from server" },
         { status: 500 }
@@ -148,7 +142,6 @@ export async function DELETE(
     } catch (parseError) {
       console.error("Failed to parse JSON response:", parseError);
       const text = await response.text();
-      console.log("Raw response:", text);
       return NextResponse.json(
         { error: "Invalid JSON response from server" },
         { status: 500 }

@@ -6,9 +6,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import {
   databaseService,
   DatabaseConnection,
@@ -25,6 +24,70 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DATABASES } from "@/app/constants";
+
+// Data sources configuration
+const DATA_SOURCES = [
+  {
+    id: 1,
+    name: "PostgreSQL",
+    value: "postgresql",
+    icon: "🐘",
+  },
+  {
+    id: 2,
+    name: "MySQL",
+    value: "mysql",
+    icon: "🐬",
+  },
+  {
+    id: 3,
+    name: "Google BigQuery",
+    value: "bigquery",
+    icon: "📊",
+  },
+  {
+    id: 4,
+    name: "Microsoft SQL Server",
+    value: "mssql",
+    icon: "💾",
+  },
+  {
+    id: 5,
+    name: "Oracle Database",
+    value: "oracle",
+    icon: "🔲",
+  },
+  {
+    id: 6,
+    name: "MongoDB",
+    value: "mongodb",
+    icon: "🍃",
+  },
+  {
+    id: 7,
+    name: "MariaDB",
+    value: "mariadb",
+    icon: "🐋",
+  },
+  {
+    id: 8,
+    name: "Snowflake",
+    value: "snowflake",
+    icon: "❄️",
+  },
+  {
+    id: 9,
+    name: "Amazon Athena",
+    value: "athena",
+    icon: "📈",
+  },
+  {
+    id: 10,
+    name: "Redshift",
+    value: "redshift",
+    icon: "🔴",
+  },
+];
 
 interface ConnectDatabaseProps {
   database:
@@ -128,6 +191,12 @@ export default function ConnectDatabase({
 }: ConnectDatabaseProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedDataSource, setSelectedDataSource] = useState<
+    (typeof DATA_SOURCES)[0] | null
+  >(null);
+  const [step, setStep] = useState<"select" | "connect">(
+    connectionData ? "connect" : "select"
+  );
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -138,7 +207,7 @@ export default function ConnectDatabase({
       username: connectionData?.username || "",
       password: connectionData?.password || "",
       database_name: connectionData?.database_name || "",
-      db_type: database?.name.toLowerCase() || "",
+      db_type: connectionData?.db_type || selectedDataSource?.value || "",
       connection_options: connectionData?.connection_options || {},
       is_active: connectionData?.is_active ?? true,
     },
@@ -159,6 +228,7 @@ export default function ConnectDatabase({
         is_active: connectionData.is_active,
       });
       setOpen(true);
+      setStep("connect");
     }
   }, [connectionData, form]);
 
@@ -170,9 +240,17 @@ export default function ConnectDatabase({
 
   useEffect(() => {
     if (!open) {
+      setStep("select");
+      setSelectedDataSource(null);
       onClose?.();
     }
   }, [open, onClose]);
+
+  const handleDataSourceSelect = (source: (typeof DATA_SOURCES)[0]) => {
+    setSelectedDataSource(source);
+    form.setValue("db_type", source.value);
+    setStep("connect");
+  };
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -180,8 +258,7 @@ export default function ConnectDatabase({
       const payload = {
         ...data,
         port: parseInt(data.port, 10),
-        db_type:
-          data.db_type?.toLowerCase() || database?.name?.toLowerCase() || "",
+        db_type: data.db_type || selectedDataSource?.value || "",
       };
 
       if (connectionData?.id) {
@@ -195,6 +272,8 @@ export default function ConnectDatabase({
       setOpen(false);
       onSuccess?.();
       form.reset();
+      setStep("select");
+      setSelectedDataSource(null);
     } catch (error) {
       console.error("Error saving database connection:", error);
     } finally {
@@ -205,109 +284,159 @@ export default function ConnectDatabase({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>
-            {connectionData
-              ? `Update ${connectionData?.db_type} Database Connection`
-              : `Connect to ${database?.name} Database`}
-          </DialogTitle>
-          <DialogDescription>
-            {connectionData
-              ? "Update your database connection details below"
-              : "Enter your database connection details below"}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {FormField.map((field) => {
-            if (field.showOnlyOnUpdate && !connectionData) {
-              return null;
-            }
-
-            return (
-              <fieldset
-                key={field.id}
-                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
-              >
-                <label
-                  htmlFor={field.id}
-                  className="text-[13px] font-medium text-gray-700 sm:w-[160px] sm:text-right"
+        {step === "select" && !connectionData ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Select the type of data source</DialogTitle>
+              <DialogDescription>
+                Set up a new data source to connect to DataLab.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4 py-4">
+              {DATA_SOURCES.map((source) => (
+                <button
+                  key={source.id}
+                  onClick={() => handleDataSourceSelect(source)}
+                  className="flex items-center gap-3 p-4 text-left rounded-lg border border-gray-200 hover:border-purple-400 hover:bg-purple-50 transition-colors"
                 >
-                  {field.label}
-                </label>
-                <div className="flex-1">
-                  {field.type === "text" ? (
-                    <input
-                      type="text"
-                      id={field.id}
-                      placeholder={field.placeholder}
-                      disabled={loading}
-                      className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      {...form.register(field.id)}
-                    />
-                  ) : field.type === "textarea" ? (
-                    <textarea
-                      id={field.id}
-                      placeholder={field.placeholder}
-                      disabled={loading}
-                      className="w-full min-h-[60px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      {...form.register(field.id)}
-                    />
-                  ) : field.type === "password" ? (
-                    <input
-                      type="password"
-                      id={field.id}
-                      placeholder={field.placeholder}
-                      disabled={loading}
-                      className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      {...form.register(field.id)}
-                    />
-                  ) : field.type === "select" ? (
-                    <Select
-                      value={form.watch("db_type")}
-                      onValueChange={(value) => form.setValue("db_type", value)}
-                      disabled={loading}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder={field.placeholder} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DATABASES.map((db) => (
-                          <SelectItem key={db.value} value={db.value}>
-                            {db.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : field.type === "switch" ? (
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id={field.id}
-                        checked={form.watch("is_active")}
-                        onCheckedChange={(checked) =>
-                          form.setValue("is_active", checked)
-                        }
-                        disabled={loading}
-                      />
-                      <span className="text-sm text-gray-500">
-                        {form.watch("is_active") ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                  ) : null}
+                  <span className="text-2xl">{source.icon}</span>
+                  <span className="text-sm font-medium">{source.name}</span>
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 border-t pt-4">
+              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="p-3 bg-white rounded-full">
+                  <Upload className="w-5 h-5 text-gray-400" />
                 </div>
-              </fieldset>
-            );
-          })}
-          <DialogFooter>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {connectionData ? "Update Connection" : "Create Connection"}
-            </Button>
-          </DialogFooter>
-        </form>
+                <div>
+                  <h3 className="text-sm font-medium">Upload a file</h3>
+                  <p className="text-sm text-gray-500">
+                    Drag and drop your CSV, TXT, or XLSX files here
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>
+                {connectionData
+                  ? `Update ${connectionData?.db_type} Database Connection`
+                  : `Connect to ${selectedDataSource?.name}`}
+              </DialogTitle>
+              <DialogDescription>
+                {connectionData
+                  ? "Update your database connection details below"
+                  : "Enter your database connection details below"}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {FormField.map((field) => {
+                if (field.showOnlyOnUpdate && !connectionData) {
+                  return null;
+                }
+
+                return (
+                  <fieldset
+                    key={field.id}
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
+                  >
+                    <label
+                      htmlFor={field.id}
+                      className="text-[13px] font-medium text-gray-700 sm:w-[160px] sm:text-right"
+                    >
+                      {field.label}
+                    </label>
+                    <div className="flex-1">
+                      {field.type === "text" ? (
+                        <input
+                          type="text"
+                          id={field.id}
+                          placeholder={field.placeholder}
+                          disabled={loading}
+                          className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          {...form.register(field.id)}
+                        />
+                      ) : field.type === "textarea" ? (
+                        <textarea
+                          id={field.id}
+                          placeholder={field.placeholder}
+                          disabled={loading}
+                          className="w-full min-h-[60px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          {...form.register(field.id)}
+                        />
+                      ) : field.type === "password" ? (
+                        <input
+                          type="password"
+                          id={field.id}
+                          placeholder={field.placeholder}
+                          disabled={loading}
+                          className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          {...form.register(field.id)}
+                        />
+                      ) : field.type === "select" ? (
+                        <Select
+                          value={form.watch("db_type")}
+                          onValueChange={(value) =>
+                            form.setValue("db_type", value)
+                          }
+                          disabled={loading}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={field.placeholder} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DATABASES.map((db) => (
+                              <SelectItem key={db.value} value={db.value}>
+                                {db.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : field.type === "switch" ? (
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id={field.id}
+                            checked={form.watch("is_active")}
+                            onCheckedChange={(checked) =>
+                              form.setValue("is_active", checked)
+                            }
+                            disabled={loading}
+                          />
+                          <span className="text-sm text-gray-500">
+                            {form.watch("is_active") ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                  </fieldset>
+                );
+              })}
+              <DialogFooter>
+                {!connectionData && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep("select")}
+                    className="mr-auto"
+                  >
+                    Back to Data Sources
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {connectionData ? "Update Connection" : "Create Connection"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

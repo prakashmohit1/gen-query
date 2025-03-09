@@ -7,5 +7,5 @@ export default async function Home() {
   if (!session) {
     return <LoginPage />;
   }
-  return redirect("/computes");
+  return redirect("/db-editor");
 }

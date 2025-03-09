@@ -5,12 +5,10 @@ import {
   Menu,
   Play,
   Search,
-  ShieldCheck,
   Loader2,
   Pencil,
   Trash2,
   Circle,
-  PauseCircle,
   Pause,
 } from "lucide-react";
 import { Tabs } from "radix-ui";
@@ -40,7 +38,6 @@ import { DATABASES } from "../constants";
 import { useDatabaseList } from "@/contexts/database-context";
 
 export default function ComputePage() {
-  const [selectedDb, setSelectedDb] = useState("postgresql");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedConnection, setSelectedConnection] =
     useState<DatabaseConnection | null>(null);
@@ -53,32 +50,25 @@ export default function ComputePage() {
 
   const filteredConnections = databases.filter(
     (conn) =>
-      conn?.db_type?.toLowerCase() === selectedDb?.toLowerCase() &&
-      (searchTerm === "" ||
-        conn.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      searchTerm === "" ||
+      conn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conn.db_type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const onTabChange = (e: string) => {
-    setSelectedDb(e);
-  };
-
-  const setEmptyConnection = () => {
-    setSelectedConnection({
-      id: "",
-      name: "",
-      database_name: "",
-      username: "",
-      host: "",
-      port: "",
-      db_type: "",
-      is_active: false,
-    });
-  };
+  // Group connections by database type
+  const groupedConnections = filteredConnections.reduce((acc, conn) => {
+    const type = conn.db_type.toLowerCase();
+    if (!acc[type]) {
+      acc[type] = [];
+    }
+    acc[type].push(conn);
+    return acc;
+  }, {} as Record<string, DatabaseConnection[]>);
 
   const handleEdit = async (connection: DatabaseConnection) => {
     try {
       setIsEditModalOpen(true);
-      setEmptyConnection();
+      setSelectedConnection(null);
       const data = await databaseService.getDatabaseConnection(connection.id);
       setSelectedConnection(data);
     } catch (err) {
@@ -117,180 +107,150 @@ export default function ComputePage() {
     <div className="w-full bg-white rounded-lg shadow-sm p-4">
       <div className="flex flex-col space-y-2">
         <div className="text-xl font-semibold text-purple-900">Databases</div>
-        <Tabs.Root
-          className="flex flex-col"
-          defaultValue="postgresql"
-          onValueChange={onTabChange}
-        >
-          <Tabs.List
-            className="flex border-b gap-4"
-            aria-label="Database Types"
-          >
-            {DATABASES.map((database) => (
-              <Tabs.Trigger
-                key={database.id}
-                className="flex h-[30px] cursor-default select-none items-center gap-4 text-[13px] leading-none outline-none first:rounded-tl-md last:rounded-tr-md hover:text-purple-700 data-[state=active]:border-b-2 data-[state=active]:border-purple-600 data-[state=active]:text-purple-900"
-                value={database.value}
-              >
-                {database.name}
-              </Tabs.Trigger>
-            ))}
-          </Tabs.List>
-          <div className="flex p-4 w-full items-center">
-            <div className="flex filter items-center border border-gray-200 rounded h-[30px] px-2">
-              <Search className="text-gray-400 w-[18px] h-[18px]" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Filter Database"
-                className="outline-none text-[13px] px-2"
-              />
-            </div>
-            <div className="flex-1 flex justify-end">
-              <Button
-                size="sm"
-                className="text-[13px] h-[30px] bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 transition-colors"
-                onClick={() => {
-                  setIsEditModalOpen(true);
-                  setIsOpen(true);
-                }}
-              >
-                {"Connect Database"}
-              </Button>
-              <ConnectDatabase
-                database={DATABASES.find((db) => db.value === selectedDb)}
-                isOpen={isOpen}
-                onSuccess={() => {
-                  setIsOpen(false);
-                  refreshConnections();
-                }}
-                onClose={() => {
-                  setIsOpen(false);
-                }}
-              />
-            </div>
-          </div>
 
-          {DATABASES.map((database) => (
-            <Tabs.Content
-              className="TabsContent p-4"
-              value={database.value}
-              key={database.id}
+        <div className="flex p-4 w-full items-center">
+          <div className="flex filter items-center border border-gray-200 rounded h-[30px] px-2">
+            <Search className="text-gray-400 w-[18px] h-[18px]" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search databases..."
+              className="outline-none text-[13px] px-2"
+            />
+          </div>
+          <div className="flex-1 flex justify-end">
+            <Button
+              size="sm"
+              className="text-[13px] h-[30px] bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 transition-colors"
+              onClick={() => {
+                setIsEditModalOpen(true);
+                setIsOpen(true);
+              }}
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
-                </div>
-              ) : error ? (
-                <div className="text-red-500 text-center py-4">{error}</div>
-              ) : (
-                <div className="flex flex-col space-y-2">
-                  <div className="text-[13px] tracking-tight">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200 h-[30px] text-left">
-                          <th className="font-medium text-purple-900">
-                            Status
-                          </th>
-                          <th className="font-medium text-purple-900">Name</th>
-                          <th className="font-medium text-purple-900">
-                            Database Name
-                          </th>
-                          <th className="font-medium text-purple-900">
-                            Username
-                          </th>
-                          <th className="font-medium text-purple-900">Host</th>
-                          <th className="font-medium text-purple-900">Port</th>
-                          <th className="font-medium text-purple-900">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredConnections.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={7}
-                              className="text-center py-4 text-gray-500"
-                            >
-                              No database connections found
-                            </td>
-                          </tr>
-                        ) : (
-                          filteredConnections.map((conn) => (
-                            <tr
-                              key={conn.id}
-                              className="border-b border-gray-200 h-[30px]"
-                            >
-                              <td>
-                                <div className="flex items-center">
-                                  {conn.is_active ? (
-                                    <Circle className="w-3 h-3 text-green-500 fill-current" />
-                                  ) : (
-                                    <Circle className="w-3 h-3 text-red-500 fill-current" />
-                                  )}
-                                </div>
-                              </td>
-                              <td>{conn.name}</td>
-                              <td>{conn.database_name}</td>
-                              <td>{conn.username}</td>
-                              <td>{conn.host}</td>
-                              <td>{conn.port}</td>
-                              <td className="space-x-2">
-                                <button
-                                  className="hover:bg-purple-50 p-1 rounded"
-                                  onClick={() => handleToggleStatus(conn)}
-                                  disabled={updatingStatus === conn.id}
-                                >
-                                  {updatingStatus === conn.id ? (
-                                    <Loader2 className="w-3 h-3 text-purple-600 animate-spin" />
-                                  ) : conn.is_active ? (
-                                    <Pause className="w-3 h-3 text-purple-600" />
-                                  ) : (
-                                    <Play className="w-3 h-3 text-purple-600" />
-                                  )}
-                                </button>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <button className="hover:bg-purple-50 p-1 rounded">
-                                      <EllipsisVertical className="w-4 h-4 text-purple-600" />
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent
-                                    align="end"
-                                    className="w-32"
-                                  >
-                                    <DropdownMenuItem
-                                      onClick={() => handleEdit(conn)}
-                                    >
-                                      <Pencil className="w-4 h-4 mr-2" />
-                                      Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        setDeletingConnection(conn)
-                                      }
-                                      className="text-red-600 focus:text-red-600"
-                                    >
-                                      <Trash2 className="w-4 h-4 mr-2" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+              Connect Database
+            </Button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+          </div>
+        ) : error ? (
+          <div className="text-red-500 text-center py-4">{error}</div>
+        ) : filteredConnections.length === 0 ? (
+          <div className="text-center py-4 text-gray-500">
+            No database connections found
+          </div>
+        ) : (
+          <div className="flex flex-col space-y-6">
+            {Object.entries(groupedConnections).map(([type, connections]) => (
+              <div key={type} className="flex flex-col space-y-2">
+                <div className="flex items-center gap-2 px-2">
+                  <h3 className="text-sm font-medium text-gray-900 capitalize">
+                    {type} Connections
+                  </h3>
+                  <div className="text-xs text-gray-500">
+                    ({connections.length})
                   </div>
                 </div>
-              )}
-            </Tabs.Content>
-          ))}
-        </Tabs.Root>
+                <div className="text-[13px] tracking-tight">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 h-[30px] text-left">
+                        <th className="font-medium text-purple-900">Status</th>
+                        <th className="font-medium text-purple-900">Name</th>
+                        <th className="font-medium text-purple-900">
+                          Database Name
+                        </th>
+                        <th className="font-medium text-purple-900">
+                          Username
+                        </th>
+                        <th className="font-medium text-purple-900">Host</th>
+                        <th className="font-medium text-purple-900">Port</th>
+                        <th className="font-medium text-purple-900">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {connections.map((conn) => (
+                        <tr
+                          key={conn.id}
+                          className="border-b border-gray-200 h-[30px]"
+                        >
+                          <td>
+                            <div className="flex items-center">
+                              {conn.is_active ? (
+                                <Circle className="w-3 h-3 text-green-500 fill-current" />
+                              ) : (
+                                <Circle className="w-3 h-3 text-red-500 fill-current" />
+                              )}
+                            </div>
+                          </td>
+                          <td>{conn.name}</td>
+                          <td>{conn.database_name}</td>
+                          <td>{conn.username}</td>
+                          <td>{conn.host}</td>
+                          <td>{conn.port}</td>
+                          <td className="space-x-2">
+                            <button
+                              className="hover:bg-purple-50 p-1 rounded"
+                              onClick={() => handleToggleStatus(conn)}
+                              disabled={updatingStatus === conn.id}
+                            >
+                              {updatingStatus === conn.id ? (
+                                <Loader2 className="w-3 h-3 text-purple-600 animate-spin" />
+                              ) : conn.is_active ? (
+                                <Pause className="w-3 h-3 text-purple-600" />
+                              ) : (
+                                <Play className="w-3 h-3 text-purple-600" />
+                              )}
+                            </button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="hover:bg-purple-50 p-1 rounded">
+                                  <EllipsisVertical className="w-4 h-4 text-purple-600" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-32">
+                                <DropdownMenuItem
+                                  onClick={() => handleEdit(conn)}
+                                >
+                                  <Pencil className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setDeletingConnection(conn)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      <ConnectDatabase
+        database={undefined}
+        isOpen={isOpen}
+        onSuccess={() => {
+          setIsOpen(false);
+          refreshConnections();
+        }}
+        onClose={() => {
+          setIsOpen(false);
+        }}
+      />
 
       {/* Add ConnectDatabase modal for editing */}
       {isEditModalOpen && selectedConnection && (

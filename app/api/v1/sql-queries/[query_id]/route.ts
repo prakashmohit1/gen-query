@@ -6,7 +6,7 @@ export async function DELETE(
   { params }: { params: { query_id: string } }
 ) {
   try {
-    const { query_id } = params || {};
+    const { query_id } = (await params) || {};
 
     if (!query_id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
@@ -17,26 +17,31 @@ export async function DELETE(
       headers: request.headers,
     });
 
-    if (response.status === 204) {
+    // Handle 204 No Content response
+    if (response instanceof Response && response.status === 204) {
       return new NextResponse(null, { status: 204 });
     }
 
+    // If response is already JSON (from fetchFromApi)
+    if (!(response instanceof Response)) {
+      return NextResponse.json(response);
+    }
+
+    // Handle error responses
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: "Failed to delete query" },
+        { status: response.status }
+      );
+    }
+
+    // Try to parse JSON response if present
     try {
       const data = await response.json();
-      if (!response.ok) {
-        return NextResponse.json(
-          { error: data.message || "An error occurred" },
-          { status: response.status }
-        );
-      }
       return NextResponse.json(data);
-    } catch (parseError) {
-      console.error("Failed to parse JSON response:", parseError);
-      const text = await response.text();
-      return NextResponse.json(
-        { error: "Invalid JSON response from server" },
-        { status: 500 }
-      );
+    } catch (error) {
+      // If no content or invalid JSON, return success with 204
+      return new NextResponse(null, { status: 204 });
     }
   } catch (error) {
     console.error("API Error:", error);

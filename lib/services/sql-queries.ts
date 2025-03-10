@@ -4,7 +4,7 @@ export interface SQLQuery {
   id: string;
   name: string;
   description?: string;
-  query: string;
+  query_text: string;
   params?: Record<string, any>;
   connection_id: string;
   created_at: string;
@@ -12,6 +12,8 @@ export interface SQLQuery {
   status?: string;
   execution_status: boolean;
   error_message?: string;
+  execution_time_ms?: number;
+  source?: string;
   result: {
     columns: string[];
     rows: Record<string, any>[];

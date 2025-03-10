@@ -59,12 +59,11 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors gap-2",
+                  className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                     pathname === item.href
-                      ? "bg-purple-50 text-purple-900"
-                      : "text-gray-700 hover:bg-gray-50"
-                  )}
+                      ? "bg-blue-50 text-blue-900"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
                   onClick={() => setOpen(false)}
                 >
                   <Icon className="h-4 w-4" />
@@ -100,12 +99,11 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={cn(
-                  "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors gap-2",
+                className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   pathname === item.href
-                    ? "bg-purple-50 text-purple-900"
-                    : "text-gray-700 hover:bg-gray-50"
-                )}
+                    ? "bg-blue-50 text-blue-900"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
                 <span

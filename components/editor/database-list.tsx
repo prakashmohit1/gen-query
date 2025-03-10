@@ -206,25 +206,23 @@ export function DatabaseList({
         <div className="flex space-x-2">
           <button
             onClick={() => setActiveTab("databases")}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+            className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
               activeTab === "databases"
-                ? "bg-purple-50 text-purple-900"
-                : "text-gray-600 hover:bg-gray-50"
-            )}
+                ? "bg-blue-50 text-blue-900"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            }`}
           >
             <Database className="w-4 h-4" />
           </button>
           <button
             onClick={() => setActiveTab("workspaces")}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+            className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
               activeTab === "workspaces"
-                ? "bg-purple-50 text-purple-900"
-                : "text-gray-600 hover:bg-gray-50"
-            )}
+                ? "bg-blue-50 text-blue-900"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            }`}
           >
-            <FileCode className="w-4 h-4" />
+            <FileCode className="w-4 h-4 text-blue-500" />
           </button>
         </div>
       </div>
@@ -237,25 +235,16 @@ export function DatabaseList({
               .map((connection) => (
                 <div key={connection.id} className="space-y-1">
                   <button
-                    className={cn(
-                      "w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded-md transition-colors",
+                    className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       selectedConnection?.id === connection.id
-                        ? "bg-purple-50 text-purple-900"
-                        : "text-gray-700 hover:bg-gray-50"
-                    )}
+                        ? "bg-blue-50 text-blue-900"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}
                     onClick={() => {
                       selectConnection(connection.id);
                       toggleExpand(connection.id, connection.db_type);
                     }}
                   >
-                    <Circle
-                      className={cn(
-                        "w-2 h-2",
-                        connection.is_active
-                          ? "text-green-500 fill-current"
-                          : "text-gray-400"
-                      )}
-                    />
                     <Database className="w-4 h-4" />
                     <span className="flex-1 text-left">{connection.name}</span>
                     <ChevronRight
@@ -301,7 +290,6 @@ export function DatabaseList({
                                 <div
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    // onTableClick(tableName);
                                     setExpandedTables((prev) =>
                                       prev.includes(tableName)
                                         ? prev.filter((t) => t !== tableName)
@@ -362,7 +350,7 @@ export function DatabaseList({
                       setMovedQueryText(query.query_text);
                     }}
                   >
-                    <FileCode className="w-4 h-4 text-purple-500" />
+                    <FileCode className="w-4 h-4 text-blue-500" />
                     <div className="flex-1 min-w-0">
                       <div className="text-[10px] leading-[12px] truncate">
                         {query.name || query.query_text || "Untitled Query"}

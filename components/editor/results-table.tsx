@@ -133,7 +133,7 @@ export function ResultsTable({
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
           <div className="text-sm text-gray-500">Executing query...</div>
         </div>
       </div>
@@ -159,7 +159,7 @@ export function ResultsTable({
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between p-4 border-b">
-        <div className="text-sm font-medium text-purple-900">Query Results</div>
+        <div className="text-sm font-medium text-blue-900">Query Results</div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -202,7 +202,7 @@ export function ResultsTable({
                         <div className="flex flex-col gap-2">
                           <button
                             onClick={() => handleSort(column.name)}
-                            className="flex items-center gap-2 hover:text-purple-600"
+                            className="flex items-center gap-2 hover:text-blue-600"
                           >
                             {column.name}
                             <ArrowUpDown className="w-4 h-4" />
@@ -246,7 +246,7 @@ export function ResultsTable({
       <Dialog open={showPerformance} onOpenChange={setShowPerformance}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-purple-900">
+            <DialogTitle className="text-xl font-semibold text-blue-900">
               Query Performance Details
             </DialogTitle>
           </DialogHeader>

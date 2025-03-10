@@ -133,12 +133,12 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     {
       id: 1,
       text: "Write a select query?",
-      icon: <Sparkles className="w-4 h-4 text-purple-600" />,
+      icon: <Sparkles className="w-4 h-4 text-blue-600" />,
     },
     {
       id: 2,
       text: "How can I create a Live Table?",
-      icon: <Sparkles className="w-4 h-4 text-purple-600" />,
+      icon: <Sparkles className="w-4 h-4 text-blue-600" />,
     },
   ];
 
@@ -420,7 +420,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
             {/* History Header */}
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <div className="flex items-center gap-2">
-                <History className="w-5 h-5 text-purple-600" />
+                <History className="w-5 h-5 text-blue-600" />
                 <h3 className="text-sm font-medium text-gray-900">
                   Chat History
                 </h3>
@@ -437,7 +437,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
             <div className="flex-1 overflow-y-auto">
               {isLoadingHistory ? (
                 <div className="flex items-center justify-center py-4">
-                  <Bot className="w-5 h-5 text-purple-600 animate-spin" />
+                  <Bot className="w-5 h-5 text-blue-600 animate-spin" />
                   <span className="ml-2 text-sm text-gray-500">
                     Loading conversations...
                   </span>
@@ -457,7 +457,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
                   {chatHistory.map((conversation) => (
                     <div
                       key={conversation.id}
-                      className="group relative bg-white rounded-lg border border-gray-100 hover:border-purple-200 transition-colors cursor-pointer"
+                      className="group relative bg-white rounded-lg border border-gray-100 hover:border-blue-200 transition-colors cursor-pointer"
                     >
                       <button
                         onClick={() => loadConversation(conversation)}
@@ -465,8 +465,8 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
                       >
                         {/* First Message */}
                         <div className="flex items-start gap-2">
-                          <div className="p-1 bg-purple-50 rounded">
-                            <MessageSquare className="w-4 h-4 text-purple-600" />
+                          <div className="p-1 bg-blue-50 rounded">
+                            <MessageSquare className="w-4 h-4 text-blue-600" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">
@@ -498,7 +498,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
                                   minute: "2-digit",
                                 })}
                               </span>
-                              <span className="text-xs text-purple-400">•</span>
+                              <span className="text-xs text-blue-400">•</span>
                               <span className="text-xs text-gray-400">
                                 {conversation.messages.length} messages
                               </span>
@@ -534,7 +534,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
             </div>
             <div className="w-16 h-16 mb-6 flex-shrink-0">
               <div className="w-full h-full relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 rounded-lg transform rotate-45"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-lg transform rotate-45"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Bot className="w-8 h-8 text-white" />
                 </div>
@@ -553,7 +553,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
                 <button
                   key={question.id}
                   onClick={() => handleSendMessage(question.text)}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-full border border-purple-200 hover:bg-purple-50 transition-colors text-gray-700 text-sm"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-full border border-blue-200 hover:bg-blue-50 transition-colors text-gray-700 text-sm"
                 >
                   {question.icon}
                   <span>{question.text}</span>
@@ -568,7 +568,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
             <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 rounded-lg transform rotate-45"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-lg transform rotate-45"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Bot className="w-4 h-4 text-white" />
                   </div>
@@ -622,7 +622,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
                     <div
                       className={`p-3 rounded-lg ${
                         message.role === Role.USER
-                          ? "bg-purple-100 text-purple-600"
+                          ? "bg-blue-100 text-blue-600"
                           : "bg-gray-200"
                       }`}
                     >
@@ -636,8 +636,8 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
               ))}
               {isLoading && (
                 <div className="flex items-center space-x-2 text-sm text-gray-500">
-                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-5 h-5 text-purple-600 animate-pulse" />
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-5 h-5 text-blue-600 animate-pulse" />
                   </div>
                   <p>Thinking...</p>
                 </div>
@@ -720,7 +720,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
                 }
               }}
               placeholder="@ for objects or / for commands"
-              className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none overflow-hidden"
+              className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 resize-none overflow-hidden"
               disabled={isLoading}
               rows={1}
               style={{
@@ -733,7 +733,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
               className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors ${
                 !inputMessage.trim() || isLoading
                   ? "text-gray-400 cursor-not-allowed"
-                  : "text-purple-600 hover:bg-purple-50 border border-purple-200"
+                  : "text-blue-600 hover:bg-blue-50 border border-blue-200"
               }`}
               disabled={!inputMessage.trim() || isLoading}
             >

@@ -388,7 +388,7 @@ export function SQLEditor({
         <div className="flex items-center gap-4">
           <Button
             size="sm"
-            className="text-[13px] h-[30px] bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 transition-colors"
+            className="text-[13px] h-[30px] bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors"
             onClick={handleExecuteQuery}
             disabled={isExecuting || !selectedDatabase}
           >
@@ -436,7 +436,7 @@ export function SQLEditor({
                 onChange={(e) => setEditingTabName(e.target.value)}
                 onBlur={handleTabNameSave}
                 onKeyDown={handleTabNameKeyDown}
-                className="w-24 px-1 text-sm bg-transparent border-b border-purple-500 outline-none"
+                className="w-24 px-1 text-sm bg-transparent border-b border-blue-500 outline-none"
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
@@ -459,7 +459,7 @@ export function SQLEditor({
           variant="ghost"
           size="sm"
           onClick={handleAddTab}
-          className="h-8 px-2 text-gray-500 hover:text-purple-600"
+          className="h-8 px-2 text-gray-500 hover:text-blue-600"
         >
           <Plus className="w-4 h-4" />
         </Button>

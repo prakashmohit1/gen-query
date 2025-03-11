@@ -7,15 +7,16 @@ import { signOut } from "next-auth/react";
 export interface DatabaseConnection {
   id: string;
   name: string;
-  description?: string;
   host: string;
   port: number | string;
   username: string;
   password?: string;
-  database_name: string;
+  database: string;
+  database_name?: string;
   db_type: string;
-  connection_options?: Record<string, any>;
   is_active: boolean;
+  description?: string;
+  connection_options?: Record<string, any>;
   status?: string;
 }
 
@@ -25,15 +26,8 @@ export interface CreateDatabaseConnection
 }
 
 export interface DatabaseTable {
-  name: string;
-  type?: string;
-  schema?: string;
-  columns?: {
-    name: string;
-    type: string;
-    nullable: boolean;
-  }[];
-  rows?: Record<string, any>[];
+  columns: string[];
+  rows: any[][];
 }
 
 export interface DatabaseService {
@@ -167,6 +161,25 @@ class DatabaseServiceImpl implements DatabaseService {
             INFORMATION_SCHEMA.COLUMNS
         WHERE 
             TABLE_SCHEMA = DATABASE();`,
+    };
+    const response = await sqlQueriesService.executeSQLQuery({
+      query: TABLE_QUERY[db_type as keyof typeof TABLE_QUERY],
+      connection_id,
+      params: {},
+    });
+    if (response.result) return response.result || [];
+  }
+
+  async getDatabaseDescription(
+    connection_id: string,
+    db_type: string,
+    table_name: string
+  ) {
+    const TABLE_QUERY = {
+      postgresql: `SELECT column_name, data_type, character_maximum_length, is_nullable 
+        FROM information_schema.columns 
+        WHERE table_name = '${table_name}';`,
+      mysql: `DESCRIBE ${table_name};`,
     };
     const response = await sqlQueriesService.executeSQLQuery({
       query: TABLE_QUERY[db_type as keyof typeof TABLE_QUERY],

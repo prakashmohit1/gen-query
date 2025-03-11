@@ -9,12 +9,17 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Menu, Database, Code, History } from "lucide-react";
+import { Menu, Database, Code, History, Blocks } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
+  {
+    title: "Catalog",
+    href: "/catalog",
+    icon: Blocks,
+  },
   {
     title: "Databases",
     href: "/computes",
@@ -71,7 +76,7 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
                   }`}
                   onClick={() => setOpen(false)}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-4 w-4 mr-2" />
                   {item.title}
                 </Link>
               );
@@ -110,7 +115,7 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                 }`}
               >
-                <Icon className="h-4 w-4 flex-shrink-0" />
+                <Icon className="h-4 w-4 flex-shrink-0 mr-2" />
                 <span
                   className={cn(
                     "transition-all duration-300",

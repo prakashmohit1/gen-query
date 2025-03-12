@@ -64,10 +64,6 @@ export default function EditorPage() {
     }
   };
 
-  const onTableClick = (tableName: string) => {
-    setQuery(`${query} ${tableName}`);
-  };
-
   useEffect(() => {
     if (movedQueryText) {
       setQuery(movedQueryText);
@@ -78,7 +74,7 @@ export default function EditorPage() {
   return (
     <div className="h-screen bg-white">
       <ResizablePanelGroup direction="horizontal">
-        <DatabaseList onTableClick={onTableClick} />
+        <DatabaseList />
 
         <ResizablePanel defaultSize={80}>
           <ResizablePanelGroup direction="vertical">

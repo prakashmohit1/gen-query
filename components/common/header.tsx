@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LogOut, User, Bot, Menu } from "lucide-react";
+import { LogOut, User, Bot, Menu, Settings } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
@@ -104,9 +104,12 @@ const Header = ({
                     </div>
                   </div>
                   <DropdownMenuSeparator className="bg-blue-200/50" />
-                  <DropdownMenuItem className="focus:bg-blue-50 focus:text-blue-900 text-blue-700 cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/settings/profile")}
+                    className="focus:bg-blue-50 focus:text-blue-900 text-blue-700 cursor-pointer"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="focus:bg-red-50 focus:text-red-600 text-red-500 cursor-pointer"

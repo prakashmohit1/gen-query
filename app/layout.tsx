@@ -12,9 +12,9 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   const session = await getServerSession(authOptions);
 
   return (
@@ -23,14 +23,12 @@ export default async function RootLayout({
         <SessionProvider session={session}>
           <AuthProvider session={session}>
             {session ? (
-              // Show layout with sidebar for authenticated users
               <div className="flex min-h-screen flex-col bg-white">
                 <main className="flex-1 flex">
                   <Layout session={session} children={children} />
                 </main>
               </div>
             ) : (
-              // Show just the content for public routes
               children
             )}
           </AuthProvider>

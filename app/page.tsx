@@ -1,9 +1,17 @@
 import LoginPage from "./login/page";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 export default async function Home() {
   const session = await getServerSession();
+  const pathname = headers().get("x-invoke-path") || "";
+
+  // Skip session check for accept-invite routes
+  if (pathname.startsWith("/accept-invite/")) {
+    return null;
+  }
+
   if (!session) {
     return <LoginPage />;
   }

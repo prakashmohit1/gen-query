@@ -209,6 +209,7 @@ export default function IdentityPage() {
           {isEditingOrgName ? (
             <div className="flex items-center gap-2">
               <Input
+                disabled={isUpdatingOrg}
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
                 className="max-w-xs"

@@ -16,6 +16,11 @@ export interface TeamSignupPayload {
   name?: string;
 }
 
+export interface AcceptInvitePayload {
+  name: string;
+  token: string;
+}
+
 class UsersServiceImpl {
   private baseUrl = "/api/v1/users";
 
@@ -101,6 +106,19 @@ class UsersServiceImpl {
 
     if (!response.ok) {
       throw new Error(`Failed to update team: ${response.statusText}`);
+    }
+  }
+
+  async acceptInvite(payload: AcceptInvitePayload): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/accept-invite`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to accept invite: ${response.statusText}`);
     }
   }
 }

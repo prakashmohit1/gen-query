@@ -9,12 +9,22 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Menu, Database, Code, History, Blocks } from "lucide-react";
+import { Menu, Database, Code, History, Blocks, FileText } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
+  {
+    title: "DB Editor",
+    href: "/db-editor",
+    icon: Code,
+  },
+  {
+    title: "Queries",
+    href: "/queries",
+    icon: FileText,
+  },
   {
     title: "Catalog",
     href: "/catalog",
@@ -24,11 +34,6 @@ const menuItems = [
     title: "Databases",
     href: "/computes",
     icon: Database,
-  },
-  {
-    title: "DB Editor",
-    href: "/db-editor",
-    icon: Code,
   },
   {
     title: "Query History",

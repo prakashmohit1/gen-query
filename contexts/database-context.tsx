@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { databaseService } from "@/lib/services/database.service";
 
 // Types
-interface DatabaseConnection {
+export interface DatabaseConnection {
   id: string;
   name: string;
   host: string;

@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Table2,
   Plus,
+  Pencil,
 } from "lucide-react";
 import { ComingSoonDialog } from "@/components/common/coming-soon-dialog";
 import { useState, useEffect, use } from "react";
@@ -35,6 +36,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams } from "next/navigation";
+import { toast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 
 interface TableDetails {
   name: string;
@@ -49,12 +52,17 @@ interface TableDetails {
   dbType: string;
 }
 
+interface Tag {
+  key: string;
+  value: string;
+}
+
 export default function CatalogPage() {
   const params = useParams();
   const { selectedConnection, connections } = useSelectedDatabase();
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "details" | "permissions"
-  >("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "details">(
+    "overview"
+  );
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,12 +71,20 @@ export default function CatalogPage() {
   const [showCreateTable, setShowCreateTable] = useState(false);
   const [createTableSQL, setCreateTableSQL] = useState("");
   const { databases, isLoading } = useDatabaseList();
-  const [showPermissionsComingSoon, setShowPermissionsComingSoon] =
-    useState(false);
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [newDescription, setNewDescription] = useState("");
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTag, setNewTag] = useState<{ key: string; value: string }>({
+    key: "",
+    value: "",
+  });
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedTableDetails, setSelectedTableDetails] =
     useState<TableDetails | null>(null);
   const [connectionId, setConnectionId] = useState<string | null>(null);
+  const router = useRouter();
 
   const getDbTables = async () => {
     setLoading(true);
@@ -151,6 +167,67 @@ export default function CatalogPage() {
       }
     } catch (error) {
       console.error("Error fetching table description:", error);
+    }
+  };
+
+  const handleDescriptionUpdate = async () => {
+    try {
+      const response = await fetch(
+        `/api/v1/catalog/databases/${params.connectionId}/description`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ description: newDescription }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to update description");
+      setDescription(newDescription);
+      setIsEditingDescription(false);
+      toast({
+        title: "Success",
+        description: "Database description updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update description",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddTag = async () => {
+    try {
+      const response = await fetch("/api/v1/catalog/tags", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          key: newTag.key,
+          value: newTag.value,
+          entity_type: "DATABASE",
+          entity_id: params.connectionId,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to add tag");
+      setTags([...tags, newTag]);
+      setNewTag({ key: "", value: "" });
+      setIsAddingTag(false);
+      toast({
+        title: "Success",
+        description: "Tag added successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add tag",
+        variant: "destructive",
+      });
     }
   };
 
@@ -278,35 +355,125 @@ export default function CatalogPage() {
             )}
           </div>
         );
-      case "permissions":
-        return (
-          <div className="flex items-center justify-center h-64">
-            <Button
-              variant="ghost"
-              className="text-gray-500"
-              onClick={() => setShowPermissionsComingSoon(true)}
-            >
-              Permissions management coming soon
-            </Button>
-          </div>
-        );
     }
   };
 
   const renderContent = () => {
     return (
       <div className="flex-1">
-        <Tabs
-          value={activeTab}
-          onValueChange={(value: any) => setActiveTab(value)}
-        >
-          <TabsList className="w-full justify-start border-b rounded-none px-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="permissions">Permissions</TabsTrigger>
-          </TabsList>
-          <div className="p-4">{renderTableContent()}</div>
-        </Tabs>
+        <div className="p-6 space-y-6">
+          {/* Database Description */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">Description</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsEditingDescription(true)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-sm text-gray-600">
+              {description || "No description"}
+            </p>
+          </div>
+
+          {/* Tags */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">Tags</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsAddingTag(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm"
+                >
+                  <span className="font-medium">{tag.key}:</span>
+                  <span>{tag.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Tabs defaultValue="tables" className="mt-6">
+            <TabsList>
+              <TabsTrigger value="tables">Tables ({tables.length})</TabsTrigger>
+              <TabsTrigger value="models">Models (1)</TabsTrigger>
+              <TabsTrigger value="functions">Functions (0)</TabsTrigger>
+            </TabsList>
+
+            <div className="my-4">
+              <Input
+                placeholder="Filter tables..."
+                value={filterQuery}
+                onChange={(e) => setFilterQuery(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+
+            <TabsContent value="tables">
+              <div className="divide-y">
+                {loading ? (
+                  <div className="py-8 text-center text-gray-500">
+                    Loading tables...
+                  </div>
+                ) : tables.length === 0 ? (
+                  <div className="py-8 text-center text-gray-500">
+                    No tables available
+                  </div>
+                ) : (
+                  tables.map((table, id) => (
+                    <div
+                      key={`${table.name}-${id}`}
+                      className="grid grid-cols-12 gap-4 py-4 hover:bg-gray-50 cursor-pointer group"
+                      onClick={() =>
+                        handleTableClick(
+                          table,
+                          table.connection_id,
+                          table.dbType
+                        )
+                      }
+                    >
+                      <div className="col-span-6 flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                          <Table2 className="w-4 h-4 text-gray-600" />
+                        </div>
+                        <span className="text-blue-600">{table.name}</span>
+                      </div>
+                      <div className="col-span-3 flex items-center text-sm text-gray-600">
+                        {table.owner}
+                      </div>
+                      <div className="col-span-3 flex items-center text-sm text-gray-600">
+                        {table.createdAt}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="models">
+              <div className="text-center py-8 text-gray-500">
+                No models available
+              </div>
+            </TabsContent>
+
+            <TabsContent value="functions">
+              <div className="text-center py-8 text-gray-500">
+                No functions available
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     );
   };
@@ -326,14 +493,14 @@ export default function CatalogPage() {
             <Button
               variant="ghost"
               className="text-blue-600 hover:text-blue-700"
-              onClick={() => setSelectedDatabase(null)}
+              onClick={() => router.push("/catalog")}
             >
-              Catalogs
+              {selectedConnection?.name || "Database"}
             </Button>
-            {selectedDatabase && (
+            {selectedTable && (
               <>
                 <ChevronRight className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600">{selectedDatabase}</span>
+                <span className="text-gray-600">{selectedTable}</span>
               </>
             )}
           </div>
@@ -341,46 +508,92 @@ export default function CatalogPage() {
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
               <Input
-                placeholder={
-                  selectedDatabase ? "Filter tables..." : "Filter catalogs..."
-                }
+                placeholder="Filter tables..."
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
                 className="pl-9"
               />
             </div>
-            {selectedDatabase ? (
-              <Button onClick={() => setShowCreateTable(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create table
-              </Button>
-            ) : (
-              <Button onClick={() => setShowComingSoon(true)}>
-                Create catalog
-              </Button>
-            )}
+            <Button onClick={() => setShowCreateTable(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create table
+            </Button>
           </div>
         </div>
 
         {/* Content */}
-        <ScrollArea className="flex-1">
-          <div className="p-6">
-            <div className="min-w-full">{renderContent()}</div>
-          </div>
-        </ScrollArea>
+        <ScrollArea className="flex-1">{renderContent()}</ScrollArea>
       </div>
 
-      {/* Coming Soon Dialogs */}
+      {/* Description Dialog */}
+      <Dialog
+        open={isEditingDescription}
+        onOpenChange={setIsEditingDescription}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Description</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+              placeholder="Enter description"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditingDescription(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleDescriptionUpdate}>Save</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Tag Dialog */}
+      <Dialog open={isAddingTag} onOpenChange={setIsAddingTag}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Tag</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Key</label>
+              <Input
+                value={newTag.key}
+                onChange={(e) => setNewTag({ ...newTag, key: e.target.value })}
+                placeholder="Enter tag key"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Value</label>
+              <Input
+                value={newTag.value}
+                onChange={(e) =>
+                  setNewTag({ ...newTag, value: e.target.value })
+                }
+                placeholder="Enter tag value"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddingTag(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddTag}>Add Tag</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Other existing dialogs */}
       <ComingSoonDialog
         isOpen={showComingSoon}
         onClose={() => setShowComingSoon(false)}
       />
-      <ComingSoonDialog
-        isOpen={showPermissionsComingSoon}
-        onClose={() => setShowPermissionsComingSoon(false)}
-      />
 
-      {/* Create Table Dialog */}
       <Dialog open={showCreateTable} onOpenChange={setShowCreateTable}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>

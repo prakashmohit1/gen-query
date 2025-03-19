@@ -7,21 +7,26 @@ import { signOut } from "next-auth/react";
 export interface DatabaseConnection {
   id: string;
   name: string;
-  host: string;
-  port: number | string;
-  username: string;
-  password?: string;
-  database: string;
-  database_name?: string;
+  description: string;
   db_type: string;
-  is_active: boolean;
-  description?: string;
-  connection_options?: Record<string, any>;
+  host: string;
+  port: number;
+  username: string;
+  default_database_name: string;
+  connection_options: Record<string, any>;
+  is_active?: boolean;
   status?: string;
 }
 
-export interface CreateDatabaseConnection
-  extends Omit<DatabaseConnection, "id" | "status"> {
+export interface CreateDatabaseConnection {
+  name: string;
+  description: string;
+  db_type: string;
+  host: string;
+  port: number;
+  username: string;
+  default_database_name: string;
+  connection_options: Record<string, any>;
   password: string;
 }
 

@@ -112,6 +112,19 @@ interface FormFieldType {
   showOnlyOnUpdate?: boolean;
 }
 
+type FormData = {
+  name: string;
+  description: string;
+  db_type: string;
+  host: string;
+  port: string;
+  username: string;
+  default_database_name: string;
+  connection_options: Record<string, any>;
+  password: string;
+  is_active?: boolean;
+};
+
 const FormField: FormFieldType[] = [
   {
     id: "name",
@@ -123,13 +136,7 @@ const FormField: FormFieldType[] = [
     id: "description",
     label: "Description",
     type: "textarea",
-    placeholder: "Enter description (optional)",
-  },
-  {
-    id: "database_name",
-    label: "Database Name",
-    type: "text",
-    placeholder: "Enter database name",
+    placeholder: "Enter description",
   },
   {
     id: "db_type",
@@ -157,6 +164,12 @@ const FormField: FormFieldType[] = [
     placeholder: "Enter username",
   },
   {
+    id: "default_database_name",
+    label: "Default Database Name",
+    type: "text",
+    placeholder: "Enter default database name",
+  },
+  {
     id: "password",
     label: "Password",
     type: "password",
@@ -168,19 +181,6 @@ const FormField: FormFieldType[] = [
     type: "switch",
   },
 ];
-
-type FormData = {
-  name: string;
-  description: string;
-  database_name: string;
-  host: string;
-  port: string;
-  username: string;
-  password: string;
-  db_type: string;
-  connection_options: Record<string, any>;
-  is_active: boolean;
-};
 
 export default function ConnectDatabase({
   database,
@@ -210,7 +210,7 @@ export default function ConnectDatabase({
       port: connectionData?.port?.toString() || "",
       username: connectionData?.username || "",
       password: connectionData?.password || "",
-      database_name: connectionData?.database_name || "",
+      default_database_name: connectionData?.database_name || "",
       db_type: connectionData?.db_type || selectedDataSource?.value || "",
       connection_options: connectionData?.connection_options || {},
       is_active: connectionData?.is_active ?? true,
@@ -226,7 +226,7 @@ export default function ConnectDatabase({
         port: connectionData.port.toString(),
         username: connectionData.username,
         password: connectionData.password || "",
-        database_name: connectionData.database_name,
+        default_database_name: connectionData.database_name,
         db_type: connectionData.db_type.toLowerCase(),
         connection_options: connectionData.connection_options || {},
         is_active: connectionData.is_active,
@@ -265,9 +265,15 @@ export default function ConnectDatabase({
     try {
       setLoading(true);
       const payload = {
-        ...data,
-        port: parseInt(data.port, 10),
+        name: data.name,
+        description: data.description,
         db_type: data.db_type || selectedDataSource?.value || "",
+        host: data.host,
+        port: parseInt(data.port),
+        username: data.username,
+        default_database_name: data.default_database_name,
+        connection_options: data.connection_options,
+        password: data.password,
       };
 
       if (connectionData?.id) {
@@ -278,13 +284,11 @@ export default function ConnectDatabase({
       } else {
         await databaseService.createDatabaseConnection(payload);
       }
+
       setOpen(false);
       onSuccess?.();
-      form.reset();
-      setStep("select");
-      setSelectedDataSource(null);
     } catch (error) {
-      console.error("Error saving database connection:", error);
+      console.error("Error submitting form:", error);
     } finally {
       setLoading(false);
     }

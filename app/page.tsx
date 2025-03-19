@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 
 export default async function Home() {
   const session = await getServerSession();
-  const pathname = headers().get("x-invoke-path") || "";
+  const pathname = (await headers()).get("x-invoke-path") || "";
 
   // Skip session check for accept-invite routes
   if (pathname.startsWith("/accept-invite/")) {

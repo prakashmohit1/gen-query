@@ -134,7 +134,6 @@ export const authOptions = {
           return newToken;
         } catch (error) {
           console.error("Team signup failed:", error);
-          throw error; // This will prevent the session from being created
         }
       }
       return token;

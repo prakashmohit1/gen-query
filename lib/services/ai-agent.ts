@@ -9,7 +9,7 @@ export interface AiAgentResponse {
 }
 
 export interface ChatRequest {
-  database_connection_id?: string;
+  database_server_connection_id?: string;
   messages: Message[];
 }
 
@@ -114,7 +114,7 @@ export class AiAgentService {
     return this.makeRequest<ChatConversation>("/api/v1/chat-conversations", {
       method: "PUT",
       body: JSON.stringify({
-        database_connection_id: databaseConnectionId,
+        database_server_connection_id: databaseConnectionId,
         messages: [],
       }),
     });

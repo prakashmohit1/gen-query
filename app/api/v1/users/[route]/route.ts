@@ -7,7 +7,7 @@ export async function POST(
 ) {
   try {
     const body = await request.json();
-    const response = await fetchFromApi(`/users/${params.route}`, {
+    const response = await fetchFromApi(`/users/${(await params).route}`, {
       method: "POST",
       body: JSON.stringify(body),
       headers: request.headers,

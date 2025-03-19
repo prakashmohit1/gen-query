@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { signOut } from "next-auth/react";
 
 export interface DatabaseConnection {
-  id: string;
+  id?: string;
   name: string;
   description: string;
   db_type: string;
@@ -16,6 +16,7 @@ export interface DatabaseConnection {
   connection_options: Record<string, any>;
   is_active?: boolean;
   status?: string;
+  password?: string;
 }
 
 export interface CreateDatabaseConnection {
@@ -106,19 +107,43 @@ class DatabaseServiceImpl implements DatabaseService {
 
   async updateDatabaseConnection(
     id: string,
-    data: Partial<CreateDatabaseConnection>
+    newData: Partial<CreateDatabaseConnection>
   ): Promise<DatabaseConnection> {
+    // Get current connection data
+    const currentConnection = await this.getDatabaseConnection(id);
+
+    // Compare and only include changed fields
+    const changedFields = Object.entries(newData).reduce(
+      (acc, [key, value]) => {
+        if (
+          value !== undefined &&
+          value !== currentConnection[key as keyof DatabaseConnection]
+        ) {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {} as Record<string, any>
+    );
+
+    // Only make the request if there are changes
+    if (Object.keys(changedFields).length === 0) {
+      return currentConnection;
+    }
+
     const response = await fetch(`${this.baseUrl}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${getCookie("id_token")}`,
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(changedFields),
     });
+
     if (!response.ok) {
       throw new Error("Failed to update database connection");
     }
+
     return response.json();
   }
 

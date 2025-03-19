@@ -17,23 +17,6 @@ import {
   useSelectedDatabase,
 } from "@/contexts/database-context";
 
-interface DatabaseConnection {
-  id: string;
-  name: string;
-  host: string;
-  port: number | string;
-  username: string;
-  password?: string;
-  database: string;
-  database_name?: string;
-  db_type: string;
-  is_active: boolean;
-  description?: string;
-  connection_options?: Record<string, any>;
-  status?: string;
-  tables?: DatabaseTable[];
-}
-
 export default function EditorPage() {
   const [query, setQuery] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
@@ -90,7 +73,7 @@ export default function EditorPage() {
                   selectedConnection
                     ? {
                         name: selectedConnection.name,
-                        database: selectedConnection.database_name,
+                        database: selectedConnection.default_database_name,
                       }
                     : undefined
                 }

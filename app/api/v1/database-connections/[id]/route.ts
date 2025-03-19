@@ -67,12 +67,13 @@ export async function PUT(
   try {
     const body = await request.json();
     const { searchParams } = new URL(request.url);
-    const id = (await params) || {};
+    const { id } = (await params) || {};
 
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
+    console.log("id", id, body);
     const response = await fetchFromApi(`/database-connections/${id}`, {
       method: "PUT",
       body: JSON.stringify(body),
@@ -85,9 +86,10 @@ export async function PUT(
 
     try {
       const data = await response.json();
+      console.log("data", data);
       if (!response.ok) {
         return NextResponse.json(
-          { error: data.message || "An error occurred" },
+          { error: data.detail || "An error occurred" },
           { status: response.status }
         );
       }

@@ -186,7 +186,7 @@ export default function ComputePage() {
                             </div>
                           </td>
                           <td>{conn.name}</td>
-                          <td>{conn.database_name}</td>
+                          <td>{conn.default_database_name}</td>
                           <td>{conn.username}</td>
                           <td>{conn.host}</td>
                           <td>{conn.port}</td>

@@ -10,6 +10,15 @@ export interface User {
   team_name?: string;
 }
 
+export interface Team {
+  id: string;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  members_count: number;
+}
+
 export interface TeamSignupPayload {
   team_name: string;
   email?: string;
@@ -47,7 +56,7 @@ class UsersServiceImpl {
       },
     });
     if (!response.ok) {
-      throw new Error(`Failed to fetch team members: ${response.statusText}`);
+      throw new Error("Failed to fetch team members");
     }
     return response.json();
   }
@@ -120,6 +129,20 @@ class UsersServiceImpl {
     if (!response.ok) {
       throw new Error(`Failed to accept invite: ${response.statusText}`);
     }
+  }
+
+  async getTeam(): Promise<Team> {
+    const response = await fetch(`${this.baseUrl}/team`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getCookie("id_token")}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch team details");
+    }
+    return response.json();
   }
 }
 

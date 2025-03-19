@@ -17,6 +17,7 @@ export interface DatabaseConnection {
   description?: string;
   connection_options?: Record<string, any>;
   status?: string;
+  team_id?: string;
 }
 
 interface DatabaseState {

@@ -96,5 +96,7 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
     }
   }
 
+  console.log("response", `${API_BASE_URL}${path}`, response.status);
+
   return response;
 }

@@ -26,25 +26,10 @@ import {
   useDatabaseList,
   useQueryDetails,
   useSelectedDatabase,
+  type DatabaseConnection,
 } from "@/contexts/database-context";
 import { sqlQueriesService } from "@/lib/services/sql-queries";
 import { format } from "date-fns";
-
-interface DatabaseConnection {
-  id: string;
-  name: string;
-  host: string;
-  port: number | string;
-  username: string;
-  password?: string;
-  database: string;
-  database_name?: string;
-  db_type: string;
-  is_active: boolean;
-  description?: string;
-  connection_options?: Record<string, any>;
-  status?: string;
-}
 
 type TabType = "databases" | "workspaces";
 
@@ -115,11 +100,23 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
   };
 
   const filteredDatabases = useMemo(() => {
-    return databases
+    const filtered = databases
       ?.filter((connection) => connection.is_active)
       .filter((connection) =>
         connection.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
+
+    // Group databases by team_id
+    const groupedByTeam = filtered?.reduce((acc, connection) => {
+      const teamId = connection.team_id || "default";
+      if (!acc[teamId]) {
+        acc[teamId] = [];
+      }
+      acc[teamId].push(connection);
+      return acc;
+    }, {} as Record<string, DatabaseConnection[]>);
+
+    return groupedByTeam;
   }, [databases, searchQuery]);
 
   const toggleExpand = async (connectionId: string, db_type: string) => {
@@ -207,101 +204,126 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
               </div>
             </div>
           ) : (
-            filteredDatabases?.map((connection) => (
-              <div key={connection.id} className="space-y-1">
-                <button
-                  className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    selectedConnection?.id === connection.id
-                      ? "bg-blue-50 text-blue-900"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  }`}
-                  onClick={() => {
-                    selectConnection(connection.id);
-                    toggleExpand(connection.id, connection.db_type);
-                  }}
-                >
-                  <Database className="w-4 h-4" />
-                  <span className="flex-1 text-left">{connection.name}</span>
-                  <ChevronRight
-                    className={cn(
-                      "w-4 h-4 transition-transform",
-                      expandedConnections.includes(connection.id) && "rotate-90"
-                    )}
-                  />
-                </button>
-                {expandedConnections.includes(connection.id) && (
-                  <div className="ml-8 space-y-1">
-                    {loadingTables.includes(connection.id) ? (
-                      <div className="flex items-center gap-2 px-2 py-1 text-sm text-gray-500">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Loading tables...</span>
-                      </div>
-                    ) : connectionTables[connection.id]?.rows?.length === 0 ? (
-                      <div className="px-2 py-1 text-sm text-gray-500">
-                        No tables found
-                      </div>
-                    ) : (
-                      // Group tables and their columns
-                      (() => {
-                        const tableMap = new Map();
-                        connectionTables[connection.id]?.rows?.forEach(
-                          (row) => {
-                            const tableName = row[0];
-                            const columnName = row[1];
-                            if (!tableMap.has(tableName)) {
-                              tableMap.set(tableName, []);
-                            }
-                            if (columnName) {
-                              tableMap.get(tableName).push(columnName);
-                            }
-                          }
-                        );
-
-                        return Array.from(tableMap.entries()).map(
-                          ([tableName, columns]) => (
-                            <div key={tableName} className="space-y-0.5">
-                              <div
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedTables((prev) =>
-                                    prev.includes(tableName)
-                                      ? prev.filter((t) => t !== tableName)
-                                      : [...prev, tableName]
-                                  );
-                                }}
-                                className="flex items-center gap-2 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer font-medium"
-                              >
-                                <Table2 className="w-4 h-4" />
-                                <span className="flex-1">{tableName}</span>
-                                <ChevronRight
-                                  className={cn(
-                                    "w-3 h-3 transition-transform",
-                                    expandedTables.includes(tableName) &&
-                                      "rotate-90"
-                                  )}
-                                />
+            Object.entries(filteredDatabases || {}).map(
+              ([teamId, connections]) => (
+                <div key={teamId} className="mb-4">
+                  {/* Team Header */}
+                  {/* <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Team: {teamId === "default" ? "No Team" : teamId}
+                  </div> */}
+                  {/* Databases in this team */}
+                  <div className="space-y-1">
+                    {connections.map((connection) => (
+                      <div key={connection.id} className="space-y-1">
+                        <button
+                          className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            selectedConnection?.id === connection.id
+                              ? "bg-blue-50 text-blue-900"
+                              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                          }`}
+                          onClick={() => {
+                            selectConnection(connection.id);
+                            toggleExpand(connection.id, connection.db_type);
+                          }}
+                        >
+                          <Database className="w-4 h-4" />
+                          <span className="flex-1 text-left">
+                            {connection.name}
+                          </span>
+                          <ChevronRight
+                            className={cn(
+                              "w-4 h-4 transition-transform",
+                              expandedConnections.includes(connection.id) &&
+                                "rotate-90"
+                            )}
+                          />
+                        </button>
+                        {expandedConnections.includes(connection.id) && (
+                          <div className="ml-8 space-y-1">
+                            {loadingTables.includes(connection.id) ? (
+                              <div className="flex items-center gap-2 px-2 py-1 text-sm text-gray-500">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Loading tables...</span>
                               </div>
-                              {expandedTables.includes(tableName) && (
-                                <div className="ml-6 border-l border-gray-200 pl-2">
-                                  {columns.map((columnName: string) => (
+                            ) : connectionTables[connection.id]?.rows
+                                ?.length === 0 ? (
+                              <div className="px-2 py-1 text-sm text-gray-500">
+                                No tables found
+                              </div>
+                            ) : (
+                              // Group tables and their columns
+                              (() => {
+                                const tableMap = new Map();
+                                connectionTables[connection.id]?.rows?.forEach(
+                                  (row) => {
+                                    const tableName = row[0];
+                                    const columnName = row[1];
+                                    if (!tableMap.has(tableName)) {
+                                      tableMap.set(tableName, []);
+                                    }
+                                    if (columnName) {
+                                      tableMap.get(tableName).push(columnName);
+                                    }
+                                  }
+                                );
+
+                                return Array.from(tableMap.entries()).map(
+                                  ([tableName, columns]) => (
                                     <div
-                                      key={`${tableName}-${columnName}`}
-                                      className="flex items-center gap-2 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 rounded-md"
+                                      key={tableName}
+                                      className="space-y-0.5"
                                     >
-                                      <span>{columnName}</span>
+                                      <div
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setExpandedTables((prev) =>
+                                            prev.includes(tableName)
+                                              ? prev.filter(
+                                                  (t) => t !== tableName
+                                                )
+                                              : [...prev, tableName]
+                                          );
+                                        }}
+                                        className="flex items-center gap-2 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer font-medium"
+                                      >
+                                        <Table2 className="w-4 h-4" />
+                                        <span className="flex-1">
+                                          {tableName}
+                                        </span>
+                                        <ChevronRight
+                                          className={cn(
+                                            "w-3 h-3 transition-transform",
+                                            expandedTables.includes(
+                                              tableName
+                                            ) && "rotate-90"
+                                          )}
+                                        />
+                                      </div>
+                                      {expandedTables.includes(tableName) && (
+                                        <div className="ml-6 border-l border-gray-200 pl-2">
+                                          {columns.map((columnName: string) => (
+                                            <div
+                                              key={`${tableName}-${columnName}`}
+                                              className="flex items-center gap-2 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 rounded-md"
+                                            >
+                                              <span>{columnName}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        );
-                      })()
-                    )}
+                                  )
+                                );
+                              })()
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-            ))
+                </div>
+              )
+            )
           )}
         </div>
       </ScrollArea>

@@ -241,7 +241,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
 
       const response = await aiAgentServices.sendMessage(
         {
-          database_connection_id: selectedConnection?.id,
+          database_server_connection_id: selectedConnection?.id,
           messages: updatedMessages,
         },
         currentConversationId || undefined

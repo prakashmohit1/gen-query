@@ -5,7 +5,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { sql } from "@codemirror/lang-sql";
 import { vscodeLight } from "@uiw/codemirror-theme-vscode";
 import { Button } from "@/components/ui/button";
-import { Play, Database, Plus, X, Clock, Settings2 } from "lucide-react";
+import { Play, Database, Plus, X, Clock, Settings2, Save } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   autocompletion,
@@ -20,13 +20,35 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable";
 import { ResultsTable } from "@/components/editor/results-table";
-import type { DatabaseTable } from "@/lib/services/database.service";
+import { savedQueriesService } from "@/lib/services/saved-queries";
+import { useToast } from "@/components/ui/use-toast";
+import { useSelectedDatabase } from "@/contexts/database-context";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface QueryTab {
   id: string;
   name: string;
-  query: string;
+  query_text: string;
   parameters: Record<string, string>;
+}
+
+interface DatabaseColumn {
+  name: string;
+  type: string;
+  comment?: string;
+}
+
+interface DatabaseTable {
+  name: string;
+  type?: string;
+  columns?: DatabaseColumn[];
+  schema?: string;
 }
 
 interface SQLEditorProps {
@@ -37,6 +59,7 @@ interface SQLEditorProps {
   selectedDatabase?: {
     name: string;
     database: string;
+    id: string;
   };
   tables?: DatabaseTable[];
   dbType?: string;
@@ -60,20 +83,24 @@ export function SQLEditor({
   error,
 }: SQLEditorProps) {
   const [tabs, setTabs] = useState<QueryTab[]>([
-    { id: "1", name: "Query 1", query: value, parameters: {} },
+    { id: "1", name: "Query 1", query_text: value, parameters: {} },
   ]);
   const [activeTabId, setActiveTabId] = useState("1");
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<any>(null);
+  const { toast } = useToast();
+
+  const { selectedConnection } = useSelectedDatabase();
 
   const handleAddTab = () => {
     const newTabId = (tabs.length + 1).toString();
     const newTab: QueryTab = {
       id: newTabId,
       name: `Query ${newTabId}`,
-      query: "",
+      query_text: "",
       parameters: {},
     };
     setTabs([...tabs, newTab]);
@@ -91,7 +118,7 @@ export function SQLEditor({
     if (tabId === activeTabId) {
       const lastTab = newTabs[newTabs.length - 1];
       setActiveTabId(lastTab.id);
-      onChange(lastTab.query);
+      onChange(lastTab.query_text);
       setParameters(lastTab.parameters);
     }
   };
@@ -100,7 +127,7 @@ export function SQLEditor({
     // Save current tab state
     const updatedTabs = tabs.map((tab) =>
       tab.id === activeTabId
-        ? { ...tab, query: value, parameters: parameters }
+        ? { ...tab, query_text: value, parameters: parameters }
         : tab
     );
 
@@ -109,7 +136,7 @@ export function SQLEditor({
     if (newTab) {
       setTabs(updatedTabs);
       setActiveTabId(tabId);
-      onChange(newTab.query);
+      onChange(newTab.query_text);
       setParameters(newTab.parameters);
     }
   };
@@ -382,6 +409,37 @@ export function SQLEditor({
     }
   };
 
+  const handleSaveQuery = async () => {
+    if (!value.trim() || !selectedDatabase) return;
+
+    const activeTab = tabs.find((tab) => tab.id === activeTabId);
+    if (!activeTab) return;
+
+    try {
+      setIsSaving(true);
+      await savedQueriesService.saveQuery({
+        name: activeTab.name,
+        description: "",
+        query_text: value,
+        database_id: selectedDatabase.id,
+      });
+
+      toast({
+        title: "Success",
+        description: "Query saved successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to save query",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 border-b">
@@ -411,7 +469,7 @@ export function SQLEditor({
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <DatabaseSelector />
         </div>
       </div>
@@ -464,6 +522,19 @@ export function SQLEditor({
           <Plus className="w-4 h-4" />
         </Button>
       </div>
+      <div className="flex items-center justify-between p-4 border-t">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSaveQuery}
+            disabled={!value.trim() || !selectedDatabase || isSaving}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isSaving ? "Saving..." : "Save Query"}
+          </Button>
+        </div>
+      </div>
 
       <ResizablePanelGroup direction="vertical">
         <ResizablePanel defaultSize={40}>
@@ -481,7 +552,9 @@ export function SQLEditor({
                 onChange(newValue);
                 setTabs(
                   tabs.map((tab) =>
-                    tab.id === activeTabId ? { ...tab, query: newValue } : tab
+                    tab.id === activeTabId
+                      ? { ...tab, query_text: newValue }
+                      : tab
                   )
                 );
               }}

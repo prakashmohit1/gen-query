@@ -16,14 +16,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import {
+  savedQueriesService,
+  type SavedQuery,
+} from "@/lib/services/saved-queries";
 
 export default function QueriesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [queries, setQueries] = useState<Query[]>([]);
+  const [queries, setQueries] = useState<SavedQuery[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterQuery, setFilterQuery] = useState("");
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof Query;
+    key: keyof SavedQuery;
     direction: "asc" | "desc";
   } | null>(null);
 
@@ -36,8 +40,11 @@ export default function QueriesPage() {
 
   const fetchQueries = async () => {
     try {
-      const data = await queriesService.getQueries();
-      setQueries(data);
+      const data = await savedQueriesService.getSavedQueries();
+      console.log("data", data);
+      if (data) {
+        setQueries(data);
+      }
     } catch (error) {
       console.error("Error fetching queries:", error);
       toast({
@@ -61,25 +68,6 @@ export default function QueriesPage() {
       return { key, direction: "asc" };
     });
   };
-
-  const filteredAndSortedQueries = queries
-    .filter(
-      (query) =>
-        query.name.toLowerCase().includes(filterQuery.toLowerCase()) ||
-        query.database.name.toLowerCase().includes(filterQuery.toLowerCase()) ||
-        query.createdBy?.toLowerCase().includes(filterQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (!sortConfig) return 0;
-
-      const { key, direction } = sortConfig;
-      let aValue = key === "database" ? a[key].name : a[key];
-      let bValue = key === "database" ? b[key].name : b[key];
-
-      if (aValue < bValue) return direction === "asc" ? -1 : 1;
-      if (aValue > bValue) return direction === "asc" ? 1 : -1;
-      return 0;
-    });
 
   return (
     <div className="p-4">
@@ -123,7 +111,7 @@ export default function QueriesPage() {
                     onClick={() => handleSort("database")}
                     className="flex items-center gap-2 hover:text-blue-600"
                   >
-                    Database
+                    Query
                     <ArrowUpDown className="w-4 h-4" />
                   </button>
                 </div>
@@ -134,18 +122,7 @@ export default function QueriesPage() {
                     onClick={() => handleSort("createdBy")}
                     className="flex items-center gap-2 hover:text-blue-600"
                   >
-                    Created By
-                    <ArrowUpDown className="w-4 h-4" />
-                  </button>
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleSort("createdAt")}
-                    className="flex items-center gap-2 hover:text-blue-600"
-                  >
-                    Created At
+                    Description
                     <ArrowUpDown className="w-4 h-4" />
                   </button>
                 </div>
@@ -159,7 +136,7 @@ export default function QueriesPage() {
                   Loading queries...
                 </TableCell>
               </TableRow>
-            ) : filteredAndSortedQueries.length === 0 ? (
+            ) : queries.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={4}
@@ -171,7 +148,7 @@ export default function QueriesPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAndSortedQueries.map((query) => (
+              queries.map((query) => (
                 <TableRow
                   key={query.id}
                   className="cursor-pointer hover:bg-gray-50"
@@ -182,11 +159,8 @@ export default function QueriesPage() {
                   }
                 >
                   <TableCell className="font-medium">{query.name}</TableCell>
-                  <TableCell>{query.database.name}</TableCell>
-                  <TableCell>{query.createdBy || "Unknown"}</TableCell>
-                  <TableCell>
-                    {new Date(query.createdAt).toLocaleDateString()}
-                  </TableCell>
+                  <TableCell>{query.query_text}</TableCell>
+                  <TableCell>{query.description || ""}</TableCell>
                 </TableRow>
               ))
             )}

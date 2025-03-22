@@ -23,18 +23,20 @@ export default function EditorPage() {
   const [results, setResults] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [parameters, setParameters] = useState<Record<string, string>>({});
-  const { selectedConnection } = useSelectedDatabase();
+  const { selectedDatabase, selectedConnection } = useSelectedDatabase();
+  console.log("selectedDatabase", selectedDatabase);
   const { movedQueryText, setMovedQueryText } = useQueryDetails();
+
   const handleExecuteQuery = async (selectedQuery: string) => {
-    if (!selectedQuery || !query.trim() || !selectedConnection) return;
+    if (!selectedQuery || !query.trim() || !selectedDatabase) return;
 
     setIsExecuting(true);
     setError(null);
 
     try {
       const response = await sqlQueriesService.executeSQLQuery({
-        query: selectedQuery || query,
-        connection_id: selectedConnection.id,
+        query_text: selectedQuery || query,
+        database_id: selectedDatabase.id,
         params: parameters,
       });
 
@@ -70,14 +72,15 @@ export default function EditorPage() {
                 onExecute={handleExecuteQuery}
                 isExecuting={isExecuting}
                 selectedDatabase={
-                  selectedConnection
+                  selectedDatabase
                     ? {
-                        name: selectedConnection.name,
-                        database: selectedConnection.default_database_name,
+                        name: selectedDatabase.name,
+                        database: selectedDatabase.name,
+                        id: selectedDatabase.id,
                       }
                     : undefined
                 }
-                tables={selectedConnection?.tables || []}
+                tables={[]}
                 dbType={selectedConnection?.db_type.toLowerCase()}
                 results={results}
                 error={error}

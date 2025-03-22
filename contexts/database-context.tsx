@@ -18,11 +18,22 @@ export interface DatabaseConnection {
   connection_options?: Record<string, any>;
   status?: string;
   team_id?: string;
+  catalog_databases?: CatalogDatabase[];
+  default_database_name?: string;
+  created_at?: string;
+}
+
+interface CatalogDatabase {
+  id: string;
+  name: string;
+  description?: string;
+  connection_id: string;
 }
 
 interface DatabaseState {
   connections: DatabaseConnection[];
   selectedConnectionId: string | null;
+  selectedDatabaseId: string | null;
   isLoading: boolean;
   error: string | null;
   movedQueryText: string | null;
@@ -30,8 +41,10 @@ interface DatabaseState {
 
 interface DatabaseContextType extends DatabaseState {
   selectConnection: (id: string | null) => void;
+  selectDatabase: (id: string | null) => void;
   refreshConnections: () => Promise<void>;
   selectedConnection: DatabaseConnection | null;
+  selectedDatabase: CatalogDatabase | null;
   movedQueryText: string | null;
   setMovedQueryText: (text: string | null) => void;
 }
@@ -47,16 +60,24 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<DatabaseState>({
     connections: [],
     selectedConnectionId: null,
+    selectedDatabaseId: null,
     isLoading: true,
     error: null,
     movedQueryText: null,
   });
 
-  // Load saved connection ID from localStorage
+  // Load saved connection and database IDs from localStorage
   useEffect(() => {
-    const savedId = localStorage.getItem("selectedConnectionId");
-    if (savedId) {
-      setState((prev) => ({ ...prev, selectedConnectionId: savedId }));
+    const savedConnectionId = localStorage.getItem("selectedConnectionId");
+    const savedDatabaseId = localStorage.getItem("selectedDatabaseId");
+    if (savedConnectionId) {
+      setState((prev) => ({
+        ...prev,
+        selectedConnectionId: savedConnectionId,
+      }));
+    }
+    if (savedDatabaseId) {
+      setState((prev) => ({ ...prev, selectedDatabaseId: savedDatabaseId }));
     }
   }, []);
 
@@ -65,10 +86,16 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const connections = await databaseService.getDatabaseConnections();
+      
+      // Map the response to match our interface
+      const mappedConnections = connections.map(conn => ({
+        ...conn,
+        database_name: conn.database || conn.database_name, // Handle both property names
+      }));
 
       setState((prev) => ({
         ...prev,
-        connections,
+        connections: mappedConnections,
         isLoading: false,
       }));
     } catch (error) {
@@ -90,18 +117,28 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     fetchConnections();
   }, []);
 
-  // Save selected connection to localStorage
+  // Save selected connection and database to localStorage
   useEffect(() => {
     if (state.selectedConnectionId) {
       localStorage.setItem("selectedConnectionId", state.selectedConnectionId);
     } else {
       localStorage.removeItem("selectedConnectionId");
     }
-  }, [state.selectedConnectionId]);
+    if (state.selectedDatabaseId) {
+      localStorage.setItem("selectedDatabaseId", state.selectedDatabaseId);
+    } else {
+      localStorage.removeItem("selectedDatabaseId");
+    }
+  }, [state.selectedConnectionId, state.selectedDatabaseId]);
 
   // Select connection handler
   const selectConnection = (id: string | null) => {
     setState((prev) => ({ ...prev, selectedConnectionId: id }));
+  };
+
+  // Select database handler
+  const selectDatabase = (id: string | null) => {
+    setState((prev) => ({ ...prev, selectedDatabaseId: id }));
   };
 
   // Get selected connection
@@ -111,12 +148,21 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
       ) || null
     : null;
 
+  // Get selected database
+  const selectedDatabase = state.selectedDatabaseId
+    ? state.connections
+        .flatMap((conn) => conn.catalog_databases || [])
+        .find((db) => db.id === state.selectedDatabaseId) || null
+    : null;
+
   // Context value
   const value: DatabaseContextType = {
     ...state,
     selectConnection,
+    selectDatabase,
     refreshConnections: fetchConnections,
     selectedConnection,
+    selectedDatabase,
     setMovedQueryText,
   };
 
@@ -136,11 +182,24 @@ export function useDatabase() {
   return context;
 }
 
-// Utility hook for selected connection
+// Update useSelectedDatabase hook
 export function useSelectedDatabase() {
-  const { selectedConnection, selectConnection, isLoading, error } =
-    useDatabase();
-  return { selectedConnection, selectConnection, isLoading, error };
+  const {
+    selectedConnection,
+    selectedDatabase,
+    selectConnection,
+    selectDatabase,
+    isLoading,
+    error,
+  } = useDatabase();
+  return {
+    selectedConnection,
+    selectedDatabase,
+    selectConnection,
+    selectDatabase,
+    isLoading,
+    error,
+  };
 }
 
 // Utility hook for database list

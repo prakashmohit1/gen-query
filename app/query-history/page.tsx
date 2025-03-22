@@ -67,7 +67,6 @@ export default function QueryHistoryPage() {
     setLoading(true);
     try {
       const data = await sqlQueriesService.getSQLQueries();
-      console.log("data", data);
       setQueries(data);
     } catch (error) {
       console.error("Failed to fetch queries:", error);

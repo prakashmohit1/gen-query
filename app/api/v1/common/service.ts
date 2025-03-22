@@ -59,6 +59,7 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
       });
     }
   }
+  console.log("fetchFromApi", `${API_BASE_URL}${path}`, path, init?.body);
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -95,8 +96,6 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
       return { error: "RefreshAccessTokenError" };
     }
   }
-
-  console.log("response", `${API_BASE_URL}${path}`, response.status);
 
   return response;
 }

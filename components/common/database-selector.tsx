@@ -15,9 +15,15 @@ import { Database, Loader2 } from "lucide-react";
 
 export function DatabaseSelector() {
   const { databases, isLoading } = useDatabaseList();
-  const { selectedConnection, selectConnection } = useSelectedDatabase();
+  const { selectedDatabase, selectDatabase } = useSelectedDatabase();
 
-  const activeConnections = databases.filter((conn) => conn.is_active);
+  // Flatten all catalog databases from all connections
+  const allCatalogDatabases = databases.flatMap((conn) =>
+    (conn.catalog_databases || []).map((db) => ({
+      ...db,
+      connection_name: conn.name,
+    }))
+  );
 
   if (isLoading) {
     return (
@@ -28,40 +34,52 @@ export function DatabaseSelector() {
     );
   }
 
-  if (activeConnections.length === 0) {
+  if (allCatalogDatabases.length === 0) {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500">
         <Database className="w-3.5 h-3.5" />
-        <span>No active databases</span>
+        <span>No databases available</span>
       </div>
     );
   }
 
   return (
     <Select
-      value={selectedConnection?.id}
-      onValueChange={(value) => selectConnection(value)}
+      value={selectedDatabase?.id}
+      onValueChange={(value) => selectDatabase(value)}
     >
       <SelectTrigger className="w-[200px] h-9 text-sm bg-gray-50 border-gray-200">
         <SelectValue placeholder="Select database">
-          {selectedConnection && (
+          {selectedDatabase && (
             <div className="flex items-center gap-2">
               <Database className="w-3.5 h-3.5" />
-              <span>{selectedConnection.name}</span>
+              <div className="flex flex-col">
+                <span>{selectedDatabase.name}</span>
+                <span className="text-xs text-gray-500">
+                  {databases.find(conn => 
+                    conn.catalog_databases?.some(db => db.id === selectedDatabase.id)
+                  )?.name}
+                </span>
+              </div>
             </div>
           )}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {activeConnections.map((conn) => (
+        {allCatalogDatabases.map((db) => (
           <SelectItem
-            key={conn.id}
-            value={conn.id}
+            key={db.id}
+            value={db.id}
             className="flex items-center gap-2"
           >
             <div className="flex items-center gap-2">
               <Database className="w-3.5 h-3.5" />
-              <span>{conn.name}</span>
+              <div className="flex flex-col">
+                <span>{db.name}</span>
+                <span className="text-xs text-gray-500">
+                  {db.connection_name}
+                </span>
+              </div>
             </div>
           </SelectItem>
         ))}

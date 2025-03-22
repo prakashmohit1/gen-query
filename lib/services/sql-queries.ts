@@ -21,8 +21,8 @@ export interface SQLQuery {
 }
 
 export interface ExecuteSQLQuery {
-  query: string;
-  connection_id: string;
+  query_text: string;
+  database_id: string;
   params?: Record<string, any>;
 }
 

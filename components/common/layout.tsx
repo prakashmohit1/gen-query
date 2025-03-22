@@ -20,7 +20,6 @@ interface LayoutProps {
 // Memoize the layout component to prevent unnecessary re-renders
 const Layout = memo(function Layout({ children, session }: LayoutProps) {
   const pathname = usePathname();
-  console.log("pathname", pathname);
   const [isAIAgentOpen, setIsAIAgentOpen] = useState(false);
   const [isSideMenuCollapsed, setIsSideMenuCollapsed] = useState(false);
 

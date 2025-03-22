@@ -3,10 +3,10 @@ import { fetchFromApi } from "../../common/service";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { queryId: string } }
 ) {
   try {
-    const response = await fetchFromApi(`/database-connections/${params.id}`, {
+    const response = await fetchFromApi(`/saved-queries/${params.queryId}`, {
       method: "GET",
       headers: request.headers,
     });
@@ -62,18 +62,17 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { queryId: string } }
 ) {
   try {
     const body = await request.json();
-    const { searchParams } = new URL(request.url);
-    const { id } = (await params) || {};
+    const { queryId } = (await params) || {};
 
-    if (!id) {
+    if (!queryId) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const response = await fetchFromApi(`/database-connections/${id}`, {
+    const response = await fetchFromApi(`/saved-queries/${queryId}`, {
       method: "PUT",
       body: JSON.stringify(body),
       headers: request.headers,
@@ -111,16 +110,16 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { queryId: string } }
 ) {
   try {
-    const { id } = (await params) || {};
+    const { queryId } = (await params) || {};
 
-    if (!id) {
+    if (!queryId) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const response = await fetchFromApi(`/database-connections/${id}`, {
+    const response = await fetchFromApi(`/database-connections/${queryId}`, {
       method: "DELETE",
       headers: request.headers,
     });

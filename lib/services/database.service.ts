@@ -82,7 +82,6 @@ class DatabaseServiceImpl implements DatabaseService {
         Authorization: `Bearer ${getCookie("id_token")}`,
       },
     });
-    console.log("response", response.status);
     if (response.status === 401) {
       signOut();
     }
@@ -177,7 +176,7 @@ class DatabaseServiceImpl implements DatabaseService {
     return response.json();
   }
 
-  async getDatabaseTables(connection_id: string, db_type: string) {
+  async getDatabaseTables(database_id: string, db_type: string) {
     const TABLE_QUERY = {
       postgresql: `SELECT table_name, column_name, data_type
             FROM information_schema.columns
@@ -193,15 +192,15 @@ class DatabaseServiceImpl implements DatabaseService {
             TABLE_SCHEMA = DATABASE();`,
     };
     const response = await sqlQueriesService.executeSQLQuery({
-      query: TABLE_QUERY[db_type as keyof typeof TABLE_QUERY],
-      connection_id,
+      query_text: TABLE_QUERY[db_type as keyof typeof TABLE_QUERY],
+      database_id,
       params: {},
     });
     if (response.result) return response.result || [];
   }
 
   async getDatabaseDescription(
-    connection_id: string,
+    database_id: string,
     db_type: string,
     table_name: string
   ) {
@@ -212,8 +211,8 @@ class DatabaseServiceImpl implements DatabaseService {
       mysql: `DESCRIBE ${table_name};`,
     };
     const response = await sqlQueriesService.executeSQLQuery({
-      query: TABLE_QUERY[db_type as keyof typeof TABLE_QUERY],
-      connection_id,
+      query_text: TABLE_QUERY[db_type as keyof typeof TABLE_QUERY],
+      database_id,
       params: {},
     });
     if (response.result) return response.result || [];

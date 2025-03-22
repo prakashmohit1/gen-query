@@ -95,7 +95,6 @@ export const authOptions = {
           try {
             const data = await response.json();
             if (data.id) {
-              console.log("data", data, newToken.user);
               if (newToken.user) {
                 newToken.user.team_name = data.name || null;
                 newToken.user.team_id = data.id || null;
@@ -130,7 +129,6 @@ export const authOptions = {
             }
           }
 
-          console.log("newToken", newToken);
           return newToken;
         } catch (error) {
           console.error("Team signup failed:", error);
@@ -154,7 +152,6 @@ export const authOptions = {
         session.team_id = token.user.team_id;
         session.role = token.user.role;
       }
-      console.log("session", session);
       return session;
     },
   },

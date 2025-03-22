@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { fetchFromApi } from "../common/service";
+import { fetchFromApi } from "../../../common/service";
 
-export async function GET(request: Request) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: { queryId: string } }
+) {
   try {
-    const response = await fetchFromApi("/sql-queries", {
-      method: "GET",
+    const response = await fetchFromApi(`/saved-queries/${params.queryId}`, {
+      method: "PATCH",
       headers: request.headers,
+      body: JSON.stringify(request.body),
     });
 
     // Handle 204 No Content response
@@ -15,7 +19,10 @@ export async function GET(request: Request) {
 
     // Handle unauthorized access
     if (response.status === 401) {
-      return NextResponse.json({ error: response.detail }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized access. Please login again." },
+        { status: 401 }
+      );
     }
 
     // Try to parse JSON for all other responses

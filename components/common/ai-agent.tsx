@@ -322,7 +322,6 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     setIsLoadingHistory(true);
     try {
       const data = await aiAgentServices.getChatHistory();
-      console.log("data", data);
       setChatHistory(data);
     } catch (error) {
       console.error("Error fetching chat history:", error);

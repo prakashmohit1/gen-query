@@ -7,8 +7,6 @@ interface UpdateDescriptionPayload {
 interface CreateTagPayload {
   key: string;
   value: string;
-  entity_type: "DATABASE";
-  entity_id: string;
 }
 
 class CatalogService {
@@ -33,21 +31,50 @@ class CatalogService {
     if (!response.ok) {
       throw new Error("Failed to update database description");
     }
+
+    return response.json();
   }
 
-  async createTag(payload: CreateTagPayload): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/tags`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getCookie("id_token")}`,
-      },
-      body: JSON.stringify(payload),
-    });
+  async createTag(
+    databaseId: string,
+    payload: CreateTagPayload
+  ): Promise<void> {
+    const response = await fetch(
+      `${this.baseUrl}/databases/${databaseId}/tags`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getCookie("id_token")}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
     if (!response.ok) {
       throw new Error("Failed to create tag");
     }
+
+    return response.json();
+  }
+
+  async getTags(databaseId: string): Promise<void> {
+    const response = await fetch(
+      `${this.baseUrl}/databases/${databaseId}/tags`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getCookie("id_token")}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to get tags");
+    }
+
+    return response.json();
   }
 }
 

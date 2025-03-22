@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       const data = await response.json();
       if (!response.ok) {
         return NextResponse.json(
-          { error: data.message || "An error occurred" },
+          { error: data.detail || "An error occurred" },
           { status: response.status }
         );
       }

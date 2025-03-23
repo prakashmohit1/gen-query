@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useMemo, useState, useRef, useEffect } from "react";
+import React, {
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+} from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { sql } from "@codemirror/lang-sql";
 import { vscodeLight } from "@uiw/codemirror-theme-vscode";
@@ -108,18 +114,13 @@ export function SQLEditor({
   const inputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<any>(null);
   const { toast } = useToast();
-
-  // Handle initial database selection from URL
-  useEffect(() => {
-    const databaseId = searchParams.get("database_id");
-    if (databaseId) {
-      selectDatabase(databaseId);
-    }
-  }, [searchParams]);
+  const [lastSavedText, setLastSavedText] = useState(value);
+  const [autoSaveInterval, setAutoSaveInterval] =
+    useState<NodeJS.Timeout | null>(null);
+  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Fetch saved queries when database changes
   useEffect(() => {
-    console.log("selectedDatabase", selectedDatabase);
     const fetchSavedQueries = async () => {
       if (!selectedDatabase?.id) return;
 
@@ -137,7 +138,7 @@ export function SQLEditor({
         // If there are saved queries, set them as tabs
         if (databaseQueries.length > 0) {
           setQueries(databaseQueries);
-          const queryId = searchParams.get("queryId");
+          const queryId = searchParams.get("query_id");
 
           // Find the target query
           const targetQuery = queryId
@@ -152,7 +153,7 @@ export function SQLEditor({
             // Update URL if queryId is not set
             if (!queryId) {
               const params = new URLSearchParams(searchParams.toString());
-              params.set("queryId", targetQuery.id || "");
+              params.set("query_id", targetQuery.id || "");
               params.set("database_id", selectedDatabase.id);
               router.replace(`/db-editor?${params.toString()}`);
             }
@@ -172,7 +173,7 @@ export function SQLEditor({
 
           // Update URL to remove queryId if present
           const params = new URLSearchParams(searchParams.toString());
-          params.delete("queryId");
+          params.delete("query_id");
           router.replace(`/db-editor?${params.toString()}`);
         }
       } catch (error) {
@@ -236,7 +237,7 @@ export function SQLEditor({
 
       // Update URL with new queryId
       const params = new URLSearchParams(searchParams.toString());
-      params.set("queryId", queryId);
+      params.set("query_id", queryId);
       if (selectedDatabase?.id) {
         params.set("database_id", selectedDatabase.id);
       }
@@ -575,71 +576,135 @@ export function SQLEditor({
     }
   };
 
-  const handleSaveQuery = async () => {
-    if (!selectedDatabase) return;
+  // Save query function
+  const saveQuery = useCallback(
+    async (queryText: string) => {
+      if (!selectedDatabase || !activeQueryId || queryText === lastSavedText)
+        return;
 
-    const activeQuery = queries.find((query) => query.id === activeQueryId);
-    if (!activeQuery) return;
+      const activeQuery = queries.find((query) => query.id === activeQueryId);
+      if (!activeQuery) return;
 
-    const queryPayload = {
-      name: activeQuery.name,
-      description: "",
-      query_text: value,
-      database_id: selectedDatabase.id,
-    };
+      const queryPayload = {
+        name: activeQuery.name,
+        description: "",
+        query_text: queryText,
+        database_id: selectedDatabase.id,
+      };
 
-    try {
-      setIsSaving(true);
+      try {
+        setIsSaving(true);
 
-      if (!activeQuery.id) {
-        // For new queries, use saveQuery
-        await savedQueriesService.saveQuery(queryPayload);
+        if (!activeQuery.id || activeQuery.id === "1") {
+          // For new queries, use saveQuery
+          await savedQueriesService.saveQuery(queryPayload);
 
-        // Get all saved queries and find the one we just saved
-        const savedQueries = await savedQueriesService.getSavedQueries(
-          selectedDatabase.id
-        );
-        const savedQuery = savedQueries.find(
-          (query) =>
-            query.database_id === selectedDatabase.id &&
-            query.name === activeQuery.name &&
-            query.query_text === value
-        );
-
-        // Update the tab with the new ID
-        if (savedQuery) {
-          setQueries(
-            queries.map((query) =>
-              query.id === activeQueryId
-                ? { ...query, id: savedQuery.id }
-                : query
-            )
+          // Get all saved queries and find the one we just saved
+          const savedQueries = await savedQueriesService.getSavedQueries(
+            selectedDatabase.id
           );
-          setActiveQueryId(savedQuery.id || "");
+          const savedQuery = savedQueries.find(
+            (query) =>
+              query.database_id === selectedDatabase.id &&
+              query.name === activeQuery.name &&
+              query.query_text === queryText
+          );
+
+          // Update the tab with the new ID
+          if (savedQuery) {
+            setQueries(
+              queries.map((query) =>
+                query.id === activeQueryId
+                  ? { ...query, id: savedQuery.id }
+                  : query
+              )
+            );
+            setActiveQueryId(savedQuery.id || "");
+          }
+        } else {
+          // For existing queries, use updateSavedQuery
+          await savedQueriesService.updateSavedQuery(
+            activeQuery.id,
+            queryPayload
+          );
         }
-      } else {
-        // For existing queries, use updateSavedQuery
-        await savedQueriesService.updateSavedQuery(
-          activeQuery.id,
-          queryPayload
-        );
+
+        setLastSavedText(queryText);
+        toast({
+          title: "Success",
+          description: "Query auto-saved",
+        });
+      } catch (error) {
+        console.error("Auto-save failed:", error);
+        toast({
+          title: "Error",
+          description: "Failed to auto-save query",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [selectedDatabase, activeQueryId, queries, lastSavedText]
+  );
+
+  // Set up periodic auto-save
+  useEffect(() => {
+    // Clear existing interval if any
+    if (autoSaveInterval) {
+      clearInterval(autoSaveInterval);
+    }
+
+    // Start new interval if we have a query to save
+    if (value.trim() && selectedDatabase) {
+      const interval = setInterval(() => {
+        saveQuery(value);
+      }, 30000); // 30 seconds
+      setAutoSaveInterval(interval);
+    }
+
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+      }
+    };
+  }, [value, selectedDatabase, saveQuery]);
+
+  // Handle debounced save after typing
+  const handleQueryChange = useCallback(
+    (newValue: string) => {
+      onChange(newValue);
+      setQueries(
+        queries.map((query) =>
+          query.id === activeQueryId
+            ? { ...query, query_text: newValue }
+            : query
+        )
+      );
+
+      // Clear existing timeout if any
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
       }
 
-      toast({
-        title: "Success",
-        description: "Query saved successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to save query",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
+      // Set new timeout for saving
+      const timeout = setTimeout(() => {
+        saveQuery(newValue);
+      }, 5000); // 5 seconds
+      setSaveTimeout(timeout);
+    },
+    [onChange, queries, activeQueryId, saveTimeout, saveQuery]
+  );
+
+  // Cleanup save timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+    };
+  }, [saveTimeout]);
 
   return (
     <div className="flex flex-col h-full">
@@ -738,7 +803,7 @@ export function SQLEditor({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleSaveQuery}
+            onClick={() => saveQuery(value)}
             disabled={!value.trim() || !selectedDatabase || isSaving}
           >
             <Save className="w-4 h-4 mr-2" />
@@ -759,16 +824,7 @@ export function SQLEditor({
                 sql(),
                 autocompletion({ override: [customSQLCompletion] }),
               ]}
-              onChange={(newValue) => {
-                onChange(newValue);
-                setQueries(
-                  queries.map((query) =>
-                    query.id === activeQueryId
-                      ? { ...query, query_text: newValue }
-                      : query
-                  )
-                );
-              }}
+              onChange={handleQueryChange}
               basicSetup={{
                 lineNumbers: true,
                 highlightActiveLineGutter: true,

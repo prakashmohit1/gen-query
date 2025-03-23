@@ -119,10 +119,12 @@ export async function DELETE(
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const response = await fetchFromApi(`/database-connections/${queryId}`, {
+    const response = await fetchFromApi(`/saved-queries/${queryId}`, {
       method: "DELETE",
       headers: request.headers,
     });
+
+    console.log("response", response);
 
     // Handle 204 No Content response
     if (response instanceof Response && response.status === 204) {
@@ -137,7 +139,7 @@ export async function DELETE(
     // Handle error responses
     if (!response.ok) {
       return NextResponse.json(
-        { error: "Failed to delete connection" },
+        { error: response || "Failed to delete query" },
         { status: response.status }
       );
     }

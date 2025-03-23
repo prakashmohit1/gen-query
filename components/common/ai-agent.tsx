@@ -18,7 +18,11 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
-import { useSelectedDatabase } from "@/contexts/database-context";
+import {
+  useDatabase,
+  useDatabaseList,
+  useSelectedDatabase,
+} from "@/contexts/database-context";
 import { aiAgentServices } from "@/lib/services/ai-agent";
 import { databaseService } from "@/lib/services/database.service";
 import Role from "@/app/enums/role";
@@ -121,7 +125,8 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   const [currentConversationId, setCurrentConversationId] = useState<
     string | null
   >(null);
-  const { selectedConnection } = useSelectedDatabase();
+  const { selectedDatabase, selectedConnection } = useSelectedDatabase();
+  const { databases } = useDatabaseList();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<
@@ -144,68 +149,74 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
 
   useEffect(() => {
     const fetchDatabaseItems = async () => {
-      if (!selectedConnection) return;
+      console.log(
+        ">>>> selectedDatabase",
+        selectedConnection?.db_type,
+        selectedDatabase
+      );
+      if (!selectedDatabase) return;
 
       try {
-        const tablesData = await databaseService.getDatabaseTables(
-          selectedConnection.id,
-          selectedConnection.db_type
+        const tablesResult = await databaseService.getDatabaseTables(
+          selectedDatabase.id,
+          selectedConnection?.db_type || ""
         );
 
-        if (!tablesData?.rows) return;
+        console.log("tablesResult", tablesResult);
 
-        const items: DropdownItem[] = [];
-        const processedTables = new Set<string>();
+        if (tablesResult?.rows) {
+          const items: DropdownItem[] = [];
+          const processedTables = new Set<string>();
 
-        // Process the rows to group by table
-        tablesData.rows.forEach((row) => {
-          const tableName = row[0]; // table_name
-          const columnName = row[1]; // column_name
-          const dataType = row[2]; // data_type
-          const schemaName = row.length > 3 ? row[3] : "default"; // schema name if available
+          // Process the rows to extract tables and columns
+          tablesResult.rows.forEach((row) => {
+            const tableName = row[0]; // table_name
+            const columnName = row[1]; // column_name
+            const dataType = row[2]; // data_type
 
-          // Add table if not already added
-          if (!processedTables.has(tableName)) {
-            items.push({
-              id: `table-${tableName}`,
-              label: tableName,
-              icon: <Table className="w-4 h-4" />,
-              type: "table",
-              schema: schemaName,
-            });
-            processedTables.add(tableName);
-          }
+            // Add table if not already added
+            if (!processedTables.has(tableName)) {
+              items.push({
+                id: `table-${tableName}`,
+                label: tableName,
+                icon: <Table className="w-4 h-4" />,
+                type: "table",
+                schema: "public",
+              });
+              processedTables.add(tableName);
+            }
 
-          // Add column
-          items.push({
-            id: `column-${tableName}-${columnName}`,
-            label: columnName,
-            icon: <Columns className="w-4 h-4" />,
-            type: "column",
-            parentTable: tableName,
-            schema: schemaName,
+            // Add column
+            if (columnName) {
+              items.push({
+                id: `column-${tableName}-${columnName}`,
+                label: `${columnName} (${dataType})`,
+                icon: <Columns className="w-4 h-4" />,
+                type: "column",
+                parentTable: tableName,
+                schema: "public",
+              });
+            }
           });
-        });
 
-        // Sort items: first by schema, then by table name
-        items.sort((a, b) => {
-          if (a.schema !== b.schema) {
-            return (a.schema || "").localeCompare(b.schema || "");
-          }
-          if (a.type !== b.type) {
-            return a.type === "table" ? -1 : 1;
-          }
-          return a.label.localeCompare(b.label);
-        });
+          // Sort items: tables first, then columns
+          items.sort((a, b) => {
+            if (a.type !== b.type) {
+              return a.type === "table" ? -1 : 1;
+            }
+            return a.label.localeCompare(b.label);
+          });
 
-        setDatabaseItems(items);
+          setDatabaseItems(items);
+          setFilteredItems(items);
+        }
       } catch (error) {
         console.error("Error fetching database items:", error);
       }
     };
 
     fetchDatabaseItems();
-  }, [selectedConnection]);
+  }, [selectedDatabase]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -241,7 +252,9 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
 
       const response = await aiAgentServices.sendMessage(
         {
-          database_server_connection_id: selectedConnection?.id,
+          database_server_connection_id: databases.find(
+            (db) => db.id === selectedDatabaseId
+          )?.id,
           messages: updatedMessages,
         },
         currentConversationId || undefined
@@ -287,15 +300,28 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
       // Filter items based on search text
       const filtered = databaseItems.filter((item) => {
         if (searchText === "") return true;
-        if (item.type === "table") {
-          return item.label.toLowerCase().includes(searchText);
+
+        const searchTerms = searchText.split(".");
+        if (searchTerms.length > 1) {
+          // If searching with table.column format
+          const [tableSearch, columnSearch] = searchTerms;
+          if (item.type === "column" && item.parentTable) {
+            return (
+              item.parentTable.toLowerCase().includes(tableSearch) &&
+              item.label.toLowerCase().includes(columnSearch)
+            );
+          }
         } else {
-          // For columns, show them only if their table or column name matches
-          return (
-            item.label.toLowerCase().includes(searchText) ||
-            (item.parentTable &&
-              item.parentTable.toLowerCase().includes(searchText))
-          );
+          // Regular search
+          if (item.type === "table") {
+            return item.label.toLowerCase().includes(searchText);
+          } else {
+            return (
+              item.label.toLowerCase().includes(searchText) ||
+              (item.parentTable &&
+                item.parentTable.toLowerCase().includes(searchText))
+            );
+          }
         }
       });
 
@@ -309,9 +335,9 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     const parts = inputMessage.split("@");
     const prefix = parts.slice(0, -1).join("@");
     const insertText =
-      item.type === "column"
-        ? `"${item.parentTable}.${item.label}"`
-        : `"${item.label}"`;
+      item.type === "column" && item.parentTable
+        ? `${item.parentTable}.${item.label.split(" ")[0]}` // Extract column name without type
+        : item.label;
     const newValue = `${prefix}${insertText} `;
     setInputMessage(newValue);
     setShowDropdown(false);

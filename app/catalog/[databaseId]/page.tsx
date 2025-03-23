@@ -61,9 +61,6 @@ interface Tag {
 export default function CatalogPage() {
   const params = useParams();
   const { selectedConnection, connections } = useSelectedDatabase();
-  const [activeTab, setActiveTab] = useState<"overview" | "details">(
-    "overview"
-  );
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -136,7 +133,11 @@ export default function CatalogPage() {
   const getDbTables = async () => {
     setLoading(true);
     try {
-      const conn = databases.find((conn) => conn.id === params.databaseId);
+      const conn = databases.find((conn) => {
+        return conn.catalog_databases?.some(
+          (db) => db.id === params.databaseId
+        );
+      });
       const db_type = conn?.db_type || "";
       if (!conn) return;
       const table = await databaseService.getDatabaseTables(
@@ -166,41 +167,18 @@ export default function CatalogPage() {
     getDbTables();
   }, [databases]);
 
-  const handleCreateTable = async () => {
-    if (!selectedDatabase || !createTableSQL) return;
-
-    try {
-      setLoading(true);
-      const selectedConn = connections?.find(
-        (conn) => conn.name === selectedDatabase
-      );
-      if (!selectedConn) return;
-
-      await databaseService.submitQuery(selectedConn.id, createTableSQL);
-      // Refresh tables list
-      await getDbTables();
-      setShowCreateTable(false);
-      setCreateTableSQL("");
-    } catch (error) {
-      console.error("Error creating table:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
   useEffect(() => {
     setLoading(loading);
   }, [isLoading]);
 
-  const handleTableClick = async (
-    table: TableDetails,
-    conn_id: string,
-    db_type: string
-  ) => {
+  const handleTableClick = async (table: TableDetails, db_type: string) => {
     setSelectedTable(table.name);
     try {
-      const selectedConn = databases.find(
-        (conn) => conn.name === selectedDatabase
-      );
+      const selectedConn = databases.find((conn) => {
+        return conn.catalog_databases?.some(
+          (db) => db.id === params.databaseId
+        );
+      });
       if (!selectedConn) return;
 
       const description = await databaseService.getDatabaseDescription(
@@ -290,10 +268,6 @@ export default function CatalogPage() {
                 className="pl-9"
               />
             </div>
-            <Button onClick={() => setShowCreateTable(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create table
-            </Button>
           </div>
         </div>
 
@@ -312,9 +286,7 @@ export default function CatalogPage() {
                 <div
                   key={`${table.name}-${id}`}
                   className="p-4 hover:bg-gray-50 cursor-pointer group"
-                  onClick={() =>
-                    handleTableClick(table, table.connection_id, table.dbType)
-                  }
+                  onClick={() => handleTableClick(table, table.dbType)}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
@@ -516,37 +488,6 @@ export default function CatalogPage() {
               <Button onClick={handleAddTag}>Add Tag</Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showCreateTable} onOpenChange={setShowCreateTable}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Create Table</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="sql">SQL Query</Label>
-              <Textarea
-                id="sql"
-                placeholder="Enter CREATE TABLE query..."
-                value={createTableSQL}
-                onChange={(e) => setCreateTableSQL(e.target.value)}
-                className="h-[200px] font-mono"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateTable(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateTable}
-              disabled={!createTableSQL || loading}
-            >
-              {loading ? "Creating..." : "Create Table"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

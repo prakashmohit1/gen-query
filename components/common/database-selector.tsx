@@ -12,10 +12,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Database, Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export function DatabaseSelector() {
   const { databases, isLoading } = useDatabaseList();
   const { selectedDatabase, selectDatabase } = useSelectedDatabase();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Flatten all catalog databases from all connections
   const allCatalogDatabases = databases.flatMap((conn) =>
@@ -24,6 +27,20 @@ export function DatabaseSelector() {
       connection_name: conn.name,
     }))
   );
+
+  const handleDatabaseChange = (databaseId: string) => {
+    // Update the database in context
+    selectDatabase(databaseId);
+
+    // Update URL parameters
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("database_id", databaseId);
+
+    // Remove queryId when changing database as it might be invalid for new database
+    params.delete("queryId");
+
+    router.replace(`/db-editor?${params.toString()}`);
+  };
 
   if (isLoading) {
     return (
@@ -44,10 +61,7 @@ export function DatabaseSelector() {
   }
 
   return (
-    <Select
-      value={selectedDatabase?.id}
-      onValueChange={(value) => selectDatabase(value)}
-    >
+    <Select value={selectedDatabase?.id} onValueChange={handleDatabaseChange}>
       <SelectTrigger className="w-[200px] h-9 text-sm bg-gray-50 border-gray-200">
         <SelectValue placeholder="Select database">
           {selectedDatabase && (
@@ -56,9 +70,13 @@ export function DatabaseSelector() {
               <div className="flex flex-col">
                 <span>{selectedDatabase.name}</span>
                 <span className="text-xs text-gray-500">
-                  {databases.find(conn => 
-                    conn.catalog_databases?.some(db => db.id === selectedDatabase.id)
-                  )?.name}
+                  {
+                    databases.find((conn) =>
+                      conn.catalog_databases?.some(
+                        (db) => db.id === selectedDatabase.id
+                      )
+                    )?.name
+                  }
                 </span>
               </div>
             </div>

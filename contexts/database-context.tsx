@@ -86,9 +86,9 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const connections = await databaseService.getDatabaseConnections();
-      
+
       // Map the response to match our interface
-      const mappedConnections = connections.map(conn => ({
+      const mappedConnections = connections.map((conn) => ({
         ...conn,
         database_name: conn.database || conn.database_name, // Handle both property names
       }));

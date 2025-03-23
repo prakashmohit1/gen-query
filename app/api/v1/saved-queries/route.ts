@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { fetchFromApi } from "../common/service";
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: { queryId: string } }
+) {
   try {
-    const response = await fetchFromApi("/saved-queries", {
+    const url = new URL(request.url);
+    const searchParams = url.search;
+    const response = await fetchFromApi(`/saved-queries${searchParams || ""}`, {
       method: "GET",
       headers: request.headers,
     });

@@ -1,11 +1,20 @@
 "use client";
 
-import React, { useMemo, useState, useRef } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { sql } from "@codemirror/lang-sql";
 import { vscodeLight } from "@uiw/codemirror-theme-vscode";
 import { Button } from "@/components/ui/button";
-import { Play, Database, Plus, X, Clock, Settings2, Save } from "lucide-react";
+import {
+  Play,
+  Database,
+  Plus,
+  X,
+  Clock,
+  Settings2,
+  Save,
+  Loader2,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   autocompletion,
@@ -23,20 +32,7 @@ import { ResultsTable } from "@/components/editor/results-table";
 import { savedQueriesService } from "@/lib/services/saved-queries";
 import { useToast } from "@/components/ui/use-toast";
 import { useSelectedDatabase } from "@/contexts/database-context";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-interface QueryTab {
-  id: string;
-  name: string;
-  query_text: string;
-  parameters: Record<string, string>;
-}
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface DatabaseColumn {
   name: string;
@@ -49,6 +45,17 @@ interface DatabaseTable {
   type?: string;
   columns?: DatabaseColumn[];
   schema?: string;
+}
+
+interface SavedQuery {
+  id?: string;
+  name: string;
+  query_text: string;
+  description: string;
+  database_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  parameters?: Record<string, string>;
 }
 
 interface SQLEditorProps {
@@ -74,7 +81,6 @@ export function SQLEditor({
   onChange,
   onExecute,
   isExecuting = false,
-  selectedDatabase,
   tables = [],
   dbType = "postgresql",
   parameters,
@@ -82,62 +88,159 @@ export function SQLEditor({
   results,
   error,
 }: SQLEditorProps) {
-  const [tabs, setTabs] = useState<QueryTab[]>([
-    { id: "1", name: "Query 1", query_text: value, parameters: {} },
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { selectDatabase, selectedDatabase } = useSelectedDatabase();
+
+  const [queries, setQueries] = useState<SavedQuery[]>([
+    {
+      name: new Date().toLocaleString(),
+      query_text: value,
+      database_id: selectedDatabase?.id,
+      description: "",
+    },
   ]);
-  const [activeTabId, setActiveTabId] = useState("1");
-  const [editingTabId, setEditingTabId] = useState<string | null>(null);
-  const [editingTabName, setEditingTabName] = useState("");
+  const [activeQueryId, setActiveQueryId] = useState("");
+  const [editingQueryId, setEditingQueryId] = useState<string | null>(null);
+  const [editingQueryName, setEditingQueryName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingSavedQueries, setIsLoadingSavedQueries] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<any>(null);
   const { toast } = useToast();
 
-  const { selectedConnection } = useSelectedDatabase();
+  // Handle initial database selection from URL
+  useEffect(() => {
+    const databaseId = searchParams.get("database_id");
+    if (databaseId) {
+      selectDatabase(databaseId);
+    }
+  }, [searchParams]);
 
-  const handleAddTab = () => {
-    const newTabId = (tabs.length + 1).toString();
-    const newTab: QueryTab = {
-      id: newTabId,
-      name: `Query ${newTabId}`,
-      query_text: "",
-      parameters: {},
+  // Fetch saved queries when database changes
+  useEffect(() => {
+    console.log("selectedDatabase", selectedDatabase);
+    const fetchSavedQueries = async () => {
+      if (!selectedDatabase?.id) return;
+
+      try {
+        setIsLoadingSavedQueries(true);
+        const savedQueries = await savedQueriesService.getSavedQueries(
+          selectedDatabase.id || ""
+        );
+
+        // Filter queries for the current database
+        const databaseQueries = savedQueries.filter(
+          (query) => query.database_id === selectedDatabase.id
+        );
+
+        // If there are saved queries, set them as tabs
+        if (databaseQueries.length > 0) {
+          setQueries(databaseQueries);
+          const queryId = searchParams.get("queryId");
+
+          // Find the target query
+          const targetQuery = queryId
+            ? databaseQueries.find((query) => query.id === queryId)
+            : databaseQueries[0];
+
+          if (targetQuery) {
+            setActiveQueryId(targetQuery.id || "");
+            onChange(targetQuery.query_text);
+            setParameters(targetQuery.parameters || {});
+
+            // Update URL if queryId is not set
+            if (!queryId) {
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("queryId", targetQuery.id || "");
+              params.set("database_id", selectedDatabase.id);
+              router.replace(`/db-editor?${params.toString()}`);
+            }
+          }
+        } else {
+          // If no saved queries, create a default tab
+          const defaultQuery = {
+            name: new Date().toLocaleString(),
+            query_text: "",
+            database_id: selectedDatabase.id,
+            description: "",
+          };
+          setQueries([defaultQuery]);
+          setActiveQueryId("");
+          onChange("");
+          setParameters({});
+
+          // Update URL to remove queryId if present
+          const params = new URLSearchParams(searchParams.toString());
+          params.delete("queryId");
+          router.replace(`/db-editor?${params.toString()}`);
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load saved queries",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingSavedQueries(false);
+      }
     };
-    setTabs([...tabs, newTab]);
-    setActiveTabId(newTabId);
+
+    fetchSavedQueries();
+  }, [selectedDatabase?.id]);
+
+  const handleAddQuery = () => {
+    const newQueryId = Date.now().toString(); // Use timestamp as ID for new tabs
+    const newQuery: SavedQuery = {
+      id: newQueryId,
+      name: new Date().toLocaleString(),
+      query_text: "",
+      database_id: selectedDatabase?.id,
+      description: "",
+    };
+    setQueries([...queries, newQuery]);
+    setActiveQueryId(newQueryId);
     onChange("");
     setParameters({});
   };
 
-  const handleRemoveTab = (tabId: string) => {
-    if (tabs.length === 1) return; // Don't remove the last tab
-    const newTabs = tabs.filter((tab) => tab.id !== tabId);
-    setTabs(newTabs);
+  const handleRemoveQuery = (queryId: string) => {
+    if (queries.length === 1) return; // Don't remove the last tab
+    const newQueries = queries.filter((query) => query.id !== queryId);
+    setQueries(newQueries);
 
     // If removing active tab, switch to the last tab
-    if (tabId === activeTabId) {
-      const lastTab = newTabs[newTabs.length - 1];
-      setActiveTabId(lastTab.id);
-      onChange(lastTab.query_text);
-      setParameters(lastTab.parameters);
+    if (queryId === activeQueryId) {
+      const lastQuery = newQueries[newQueries.length - 1];
+      setActiveQueryId(lastQuery.id || "");
+      onChange(lastQuery.query_text);
+      setParameters(lastQuery.parameters || {});
     }
   };
 
-  const handleTabChange = (tabId: string) => {
+  const handleTabChange = (queryId: string) => {
     // Save current tab state
-    const updatedTabs = tabs.map((tab) =>
-      tab.id === activeTabId
-        ? { ...tab, query_text: value, parameters: parameters }
-        : tab
+    const updatedQueries = queries.map((query) =>
+      query.id === activeQueryId
+        ? { ...query, query_text: value, parameters: parameters }
+        : query
     );
 
     // Switch to new tab
-    const newTab = updatedTabs.find((tab) => tab.id === tabId);
-    if (newTab) {
-      setTabs(updatedTabs);
-      setActiveTabId(tabId);
-      onChange(newTab.query_text);
-      setParameters(newTab.parameters);
+    const newQuery = updatedQueries.find((query) => query.id === queryId);
+    if (newQuery) {
+      setQueries(updatedQueries);
+      setActiveQueryId(queryId);
+      onChange(newQuery.query_text);
+      setParameters(newQuery.parameters || {});
+
+      // Update URL with new queryId
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("queryId", queryId);
+      if (selectedDatabase?.id) {
+        params.set("database_id", selectedDatabase.id);
+      }
+      router.replace(`/db-editor?${params.toString()}`);
     }
   };
 
@@ -147,7 +250,7 @@ export function SQLEditor({
     // Add database name suggestions
     if (selectedDatabase) {
       completions.push({
-        label: selectedDatabase.database,
+        label: selectedDatabase.name,
         type: "database",
         info: "Current database",
       });
@@ -358,23 +461,86 @@ export function SQLEditor({
     setParameters({ ...parameters, [paramName]: value });
   };
 
-  const handleTabDoubleClick = (tab: QueryTab) => {
-    setEditingTabId(tab.id);
-    setEditingTabName(tab.name);
+  const handleTabDoubleClick = (query: SavedQuery) => {
+    setEditingQueryId(query.id || "");
+    setEditingQueryName(query.name);
     // Focus the input after it's rendered
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  const handleTabNameSave = () => {
-    if (editingTabId) {
-      setTabs(
-        tabs.map((tab) =>
-          tab.id === editingTabId
-            ? { ...tab, name: editingTabName.trim() || tab.name }
-            : tab
+  const handleTabNameSave = async () => {
+    if (editingQueryId) {
+      // Update the tab name in the UI
+      setQueries(
+        queries.map((query) =>
+          query.id === editingQueryId
+            ? { ...query, name: editingQueryName.trim() || query.name }
+            : query
         )
       );
-      setEditingTabId(null);
+
+      // Save the query with the new name
+      if (selectedDatabase) {
+        const query = queries.find((q) => q.id === editingQueryId);
+        if (query) {
+          try {
+            setIsSaving(true);
+            const queryPayload = {
+              name: editingQueryName.trim(),
+              description: "",
+              query_text: value,
+              database_id: selectedDatabase.id,
+            };
+
+            if (!query.id) {
+              // For new queries, use saveQuery
+              await savedQueriesService.saveQuery(queryPayload);
+
+              // Get all saved queries and find the one we just saved
+              const savedQueries = await savedQueriesService.getSavedQueries(
+                selectedDatabase.id
+              );
+              const savedQuery = savedQueries.find(
+                (query) =>
+                  query.database_id === selectedDatabase.id &&
+                  query.name === editingQueryName.trim() &&
+                  query.query_text === value
+              );
+
+              // Update the tab with the new ID
+              if (savedQuery) {
+                setQueries(
+                  queries.map((q) =>
+                    q.id === editingQueryId ? { ...q, id: savedQuery.id } : q
+                  )
+                );
+                setActiveQueryId(savedQuery.id || "");
+              }
+            } else {
+              // For existing queries, use updateSavedQuery
+              await savedQueriesService.updateSavedQuery(
+                query.id,
+                queryPayload
+              );
+            }
+
+            toast({
+              title: "Success",
+              description: "Query saved successfully",
+            });
+          } catch (error) {
+            toast({
+              title: "Error",
+              description:
+                error instanceof Error ? error.message : "Failed to save query",
+              variant: "destructive",
+            });
+          } finally {
+            setIsSaving(false);
+          }
+        }
+      }
+      setEditingQueryId(null);
     }
   };
 
@@ -382,7 +548,7 @@ export function SQLEditor({
     if (e.key === "Enter") {
       handleTabNameSave();
     } else if (e.key === "Escape") {
-      setEditingTabId(null);
+      setEditingQueryId(null);
     }
   };
 
@@ -410,19 +576,54 @@ export function SQLEditor({
   };
 
   const handleSaveQuery = async () => {
-    if (!value.trim() || !selectedDatabase) return;
+    if (!selectedDatabase) return;
 
-    const activeTab = tabs.find((tab) => tab.id === activeTabId);
-    if (!activeTab) return;
+    const activeQuery = queries.find((query) => query.id === activeQueryId);
+    if (!activeQuery) return;
+
+    const queryPayload = {
+      name: activeQuery.name,
+      description: "",
+      query_text: value,
+      database_id: selectedDatabase.id,
+    };
 
     try {
       setIsSaving(true);
-      await savedQueriesService.saveQuery({
-        name: activeTab.name,
-        description: "",
-        query_text: value,
-        database_id: selectedDatabase.id,
-      });
+
+      if (!activeQuery.id) {
+        // For new queries, use saveQuery
+        await savedQueriesService.saveQuery(queryPayload);
+
+        // Get all saved queries and find the one we just saved
+        const savedQueries = await savedQueriesService.getSavedQueries(
+          selectedDatabase.id
+        );
+        const savedQuery = savedQueries.find(
+          (query) =>
+            query.database_id === selectedDatabase.id &&
+            query.name === activeQuery.name &&
+            query.query_text === value
+        );
+
+        // Update the tab with the new ID
+        if (savedQuery) {
+          setQueries(
+            queries.map((query) =>
+              query.id === activeQueryId
+                ? { ...query, id: savedQuery.id }
+                : query
+            )
+          );
+          setActiveQueryId(savedQuery.id || "");
+        }
+      } else {
+        // For existing queries, use updateSavedQuery
+        await savedQueriesService.updateSavedQuery(
+          activeQuery.id,
+          queryPayload
+        );
+      }
 
       toast({
         title: "Success",
@@ -462,7 +663,8 @@ export function SQLEditor({
           </Button>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-900">
-              {tabs.find((tab) => tab.id === activeTabId)?.name || "New Query"}
+              {queries.find((query) => query.id === activeQueryId)?.name ||
+                "New Query"}
             </span>
             <span className="text-sm text-gray-500">
               {getCurrentTimestamp()}
@@ -475,52 +677,61 @@ export function SQLEditor({
       </div>
 
       <div className="flex items-center gap-1 px-2 pt-2 border-b bg-gray-50">
-        {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            className={`group flex items-center gap-2 px-4 py-2 text-sm rounded-t-lg cursor-pointer border-x border-t transition-colors ${
-              activeTabId === tab.id
-                ? "bg-white text-gray-900 border-gray-200"
-                : "bg-gray-50 text-gray-600 border-transparent hover:bg-gray-100"
-            }`}
-            onClick={() => handleTabChange(tab.id)}
-            onDoubleClick={() => handleTabDoubleClick(tab)}
-          >
-            {editingTabId === tab.id ? (
-              <input
-                ref={inputRef}
-                type="text"
-                value={editingTabName}
-                onChange={(e) => setEditingTabName(e.target.value)}
-                onBlur={handleTabNameSave}
-                onKeyDown={handleTabNameKeyDown}
-                className="w-24 px-1 text-sm bg-transparent border-b border-blue-500 outline-none"
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <span className="min-w-[3rem]">{tab.name}</span>
-            )}
-            {tabs.length > 1 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveTab(tab.id);
-                }}
-                className="opacity-0 group-hover:opacity-100 hover:text-red-500"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+        {isLoadingSavedQueries ? (
+          <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-500">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading saved queries...
           </div>
-        ))}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleAddTab}
-          className="h-8 px-2 text-gray-500 hover:text-blue-600"
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
+        ) : (
+          <>
+            {queries?.map((query, index) => (
+              <div
+                key={`${query.id}-${index}`}
+                className={`group flex items-center gap-2 px-4 py-2 text-sm rounded-t-lg cursor-pointer border-x border-t transition-colors ${
+                  activeQueryId === query.id
+                    ? "bg-white text-gray-900 border-gray-200"
+                    : "bg-gray-50 text-gray-600 border-transparent hover:bg-gray-100"
+                }`}
+                onClick={() => handleTabChange(query.id || "")}
+                onDoubleClick={() => handleTabDoubleClick(query)}
+              >
+                {editingQueryId === query.id ? (
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={editingQueryName}
+                    onChange={(e) => setEditingQueryName(e.target.value)}
+                    onBlur={handleTabNameSave}
+                    onKeyDown={handleTabNameKeyDown}
+                    className="w-24 px-1 text-sm bg-transparent border-b border-blue-500 outline-none"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span className="min-w-[3rem]">{query.name}</span>
+                )}
+                {queries.length > 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveQuery(query.id || "");
+                    }}
+                    className="opacity-0 group-hover:opacity-100 hover:text-red-500"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAddQuery}
+              className="h-8 px-2 text-gray-500 hover:text-blue-600"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </>
+        )}
       </div>
       <div className="flex items-center justify-between p-4 border-t">
         <div className="flex items-center gap-2">
@@ -550,11 +761,11 @@ export function SQLEditor({
               ]}
               onChange={(newValue) => {
                 onChange(newValue);
-                setTabs(
-                  tabs.map((tab) =>
-                    tab.id === activeTabId
-                      ? { ...tab, query_text: newValue }
-                      : tab
+                setQueries(
+                  queries.map((query) =>
+                    query.id === activeQueryId
+                      ? { ...query, query_text: newValue }
+                      : query
                   )
                 );
               }}

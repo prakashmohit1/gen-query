@@ -71,15 +71,6 @@ export default function EditorPage() {
                 onChange={setQuery}
                 onExecute={handleExecuteQuery}
                 isExecuting={isExecuting}
-                selectedDatabase={
-                  selectedDatabase
-                    ? {
-                        name: selectedDatabase.name,
-                        database: selectedDatabase.name,
-                        id: selectedDatabase.id,
-                      }
-                    : undefined
-                }
                 tables={[]}
                 dbType={selectedConnection?.db_type.toLowerCase()}
                 results={results}

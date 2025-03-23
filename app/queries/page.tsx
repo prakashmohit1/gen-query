@@ -43,7 +43,7 @@ export default function QueriesPage() {
       const data = await savedQueriesService.getSavedQueries();
       console.log("data", data);
       if (data) {
-        setQueries(data);
+        setQueries([...data]);
       }
     } catch (error) {
       console.error("Error fetching queries:", error);
@@ -154,7 +154,7 @@ export default function QueriesPage() {
                   className="cursor-pointer hover:bg-gray-50"
                   onClick={() =>
                     router.push(
-                      `/db-editor?dbId=${query.databaseId}&queryName=${query.name}`
+                      `/db-editor?database_id=${query.database_id}&queryId=${query.id}`
                     )
                   }
                 >

@@ -113,33 +113,76 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
 
   const fetchTableColumns = async (databaseId: string) => {
     try {
-      const response = await databaseService.getDatabaseTables(databaseId);
-      console.log("state.connections", state.connections);
-      const mappedConnections = state.connections.map((conn) => {
-        conn.catalog_databases?.forEach((db: CatalogDatabase) => {
+      // Create a deep copy of connections to avoid mutating state directly
+      const updatedConnections = state.connections.map((conn) => ({
+        ...conn,
+        catalog_databases: conn.catalog_databases?.map((db) => {
           if (db.id === databaseId) {
-            db.tables = response.tables;
-            db.loadingTable = false;
+            return { ...db, loadingTable: true };
           }
-        });
-        return conn;
-      });
+          return db;
+        }),
+      }));
 
+      // Update state to show loading
       setState((prev) => ({
         ...prev,
-        connections: mappedConnections,
+        connections: updatedConnections,
+      }));
+
+      // Fetch tables data
+      const response = await databaseService.getDatabaseTables(databaseId);
+
+      // Update the connections with the fetched tables
+      const connectionsWithTables = updatedConnections.map((conn) => ({
+        ...conn,
+        catalog_databases: conn.catalog_databases?.map((db) => {
+          if (db.id === databaseId) {
+            return {
+              ...db,
+              tables: response.tables,
+              loadingTable: false,
+            };
+          }
+          return db;
+        }),
+      }));
+
+      // Update state with the new data
+      setState((prev) => ({
+        ...prev,
+        connections: connectionsWithTables,
         isLoading: false,
       }));
-    } catch (e) {
-      console.error(e);
+
+      return response.tables;
+    } catch (error) {
+      console.error("Error fetching table columns:", error);
+
+      // Update state to remove loading state in case of error
+      setState((prev) => ({
+        ...prev,
+        connections: prev.connections.map((conn) => ({
+          ...conn,
+          catalog_databases: conn.catalog_databases?.map((db) => {
+            if (db.id === databaseId) {
+              return { ...db, loadingTable: false };
+            }
+            return db;
+          }),
+        })),
+        isLoading: false,
+      }));
     }
-    // setState({ ...state });
   };
+
   // Fetch connections
   const fetchConnections = async () => {
+    console.log("fetchConnections");
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const connections = await databaseService.getDatabaseConnections();
+      console.log("connections", connections);
 
       // Map the response to match our interface
       const mappedConnections = connections.map((conn: DatabaseConnection) => {
@@ -174,14 +217,6 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchConnections();
   }, []);
-
-  useEffect(() => {
-    state.connections.forEach((conn) => {
-      conn.catalog_databases?.map((db: any) => {
-        fetchTableColumns(db.id);
-      });
-    });
-  }, [state.connections]);
 
   // Save selected connection and database to localStorage
   useEffect(() => {
@@ -220,6 +255,8 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
         .flatMap((conn) => conn.catalog_databases || [])
         .find((db) => db.id === state.selectedDatabaseId) || null
     : null;
+
+  console.log("selectedDatabase", selectedDatabase);
 
   // Context value
   const value: DatabaseContextType = {

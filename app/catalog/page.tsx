@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
+import { Breadcrumbs } from "@/components/common/breadcrumbs";
 
 export default function CatalogPage() {
   const router = useRouter();
@@ -149,35 +150,26 @@ export default function CatalogPage() {
         <DatabaseList />
       </div>
 
-      {/* Right side - Catalog View */}
-      <div className="flex-1 flex flex-col">
-        {/* Breadcrumbs and Actions */}
-        <div className="border-b p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              className="text-blue-600 hover:text-blue-700"
-            >
-              Catalog Databases
-            </Button>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search databases..."
-                value={filterQuery}
-                onChange={(e) => setFilterQuery(e.target.value)}
-                className="pl-9"
-              />
+      {/* Main content */}
+      <div className="flex-1 h-full flex flex-col">
+        <div className="border-b p-4 flex flex justify-between gap-4">
+          <Breadcrumbs items={[{ label: "Catalog" }]} />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2"></div>
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Filter databases..."
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
-            <Button onClick={() => setShowComingSoon(true)}>
-              Create Database
-            </Button>
           </div>
         </div>
 
-        {/* Content */}
         <ScrollArea className="flex-1">
           <div className="p-6">
             <div className="min-w-full">{renderContent()}</div>

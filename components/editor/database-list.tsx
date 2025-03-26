@@ -110,7 +110,6 @@ interface DatabaseConnection {
 export function DatabaseList({ connectionId }: { connectionId?: string }) {
   const [expandedConnections, setExpandedConnections] = useState<string[]>([]);
   const [expandedTables, setExpandedTables] = useState<string[]>([]);
-  const [loadingTables, setLoadingTables] = useState<string[]>([]);
   const [connectionTables, setConnectionTables] = useState<
     Record<string, DatabaseTable>
   >({});
@@ -163,7 +162,7 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
 
     // Fetch tables if not already loaded
     // if (!connectionTables[databaseId]) {
-    //   setLoadingTables((prev) => [...prev, databaseId]);
+    //   setloadingTables((prev) => [...prev, databaseId]);
     //   try {
     //     const table = await databaseService.getDatabaseTables(
     //       databaseId,
@@ -178,12 +177,13 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
     //   } catch (error) {
     //     console.error("Error fetching tables:", error);
     //   } finally {
-    //     setLoadingTables((prev) => prev.filter((id) => id !== databaseId));
+    //     setloadingTables((prev) => prev.filter((id) => id !== databaseId));
     //   }
     // }
   };
 
   useEffect(() => {
+    console.log("databases", databases?.[0]?.catalog_databases?.[0]?.tables);
     const activeConnections = databases.filter(
       (connection) => connection.is_active
     );
@@ -306,18 +306,20 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
                                 )}
                               />
                             </div>
-                            {/* {table?.columns.length > 0 && (
-                              <div className="ml-6 border-l border-gray-200 pl-2">
-                                {table.columns.map((column: any) => (
-                                  <div
-                                    key={`${table.name}-${column.name}`}
-                                    className="flex items-center gap-2 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 rounded-md"
-                                  >
-                                    <span>{column.name}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )} */}
+                            {Array.isArray(table?.columns) &&
+                              table.columns.length > 0 &&
+                              expandedTables.includes(table.name) && (
+                                <div className="ml-6 border-l border-gray-200 pl-2">
+                                  {table.columns.map((column: any) => (
+                                    <div
+                                      key={`${table.name}-${column.name}`}
+                                      className="flex items-center gap-2 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 rounded-md"
+                                    >
+                                      <span>{column.name}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                           </div>
                         ))
                       ))}

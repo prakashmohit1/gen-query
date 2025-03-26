@@ -24,7 +24,6 @@ export default function EditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [parameters, setParameters] = useState<Record<string, string>>({});
   const { selectedDatabase, selectedConnection } = useSelectedDatabase();
-  console.log("selectedDatabase", selectedDatabase);
   const { movedQueryText, setMovedQueryText } = useQueryDetails();
 
   const handleExecuteQuery = async (selectedQuery: string) => {

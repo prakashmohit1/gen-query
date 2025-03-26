@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Bot,
   Sparkles,
@@ -120,7 +120,6 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   const [showHistory, setShowHistory] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatConversation[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [databaseItems, setDatabaseItems] = useState<DropdownItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<DropdownItem[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<
     string | null
@@ -134,6 +133,40 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   >(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
+  // Create a memoized list of database items from the context
+  const databaseItems = useMemo(() => {
+    if (!selectedDatabase || !selectedDatabase.tables) return [];
+
+    const items: DropdownItem[] = [];
+
+    // Add tables
+    selectedDatabase.tables.forEach((table) => {
+      items.push({
+        id: `table-${table.name}`,
+        label: table.name,
+        icon: <Table className="w-4 h-4" />,
+        type: "table",
+        schema: table.schema || "public",
+      });
+
+      // Add columns for each table
+      if (table.columns) {
+        table.columns.forEach((column) => {
+          items.push({
+            id: `column-${table.name}-${column.name}`,
+            label: `${column.name} (${column.data_type})`,
+            icon: <Columns className="w-4 h-4" />,
+            type: "column",
+            parentTable: table.name,
+            schema: table.schema || "public",
+          });
+        });
+      }
+    });
+
+    return items;
+  }, [selectedDatabase]);
+
   const suggestedQuestions: SuggestedQuestion[] = [
     {
       id: 1,
@@ -146,77 +179,6 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
       icon: <Sparkles className="w-4 h-4 text-blue-600" />,
     },
   ];
-
-  useEffect(() => {
-    const fetchDatabaseItems = async () => {
-      console.log(
-        ">>>> selectedDatabase",
-        selectedConnection?.db_type,
-        selectedDatabase
-      );
-      if (!selectedDatabase) return;
-
-      try {
-        const tablesResult = await databaseService.getDatabaseTables(
-          selectedDatabase.id,
-          selectedConnection?.db_type || ""
-        );
-
-        console.log("tablesResult", tablesResult);
-
-        if (tablesResult?.rows) {
-          const items: DropdownItem[] = [];
-          const processedTables = new Set<string>();
-
-          // Process the rows to extract tables and columns
-          tablesResult.rows.forEach((row) => {
-            const tableName = row[0]; // table_name
-            const columnName = row[1]; // column_name
-            const dataType = row[2]; // data_type
-
-            // Add table if not already added
-            if (!processedTables.has(tableName)) {
-              items.push({
-                id: `table-${tableName}`,
-                label: tableName,
-                icon: <Table className="w-4 h-4" />,
-                type: "table",
-                schema: "public",
-              });
-              processedTables.add(tableName);
-            }
-
-            // Add column
-            if (columnName) {
-              items.push({
-                id: `column-${tableName}-${columnName}`,
-                label: `${columnName} (${dataType})`,
-                icon: <Columns className="w-4 h-4" />,
-                type: "column",
-                parentTable: tableName,
-                schema: "public",
-              });
-            }
-          });
-
-          // Sort items: tables first, then columns
-          items.sort((a, b) => {
-            if (a.type !== b.type) {
-              return a.type === "table" ? -1 : 1;
-            }
-            return a.label.localeCompare(b.label);
-          });
-
-          setDatabaseItems(items);
-          setFilteredItems(items);
-        }
-      } catch (error) {
-        console.error("Error fetching database items:", error);
-      }
-    };
-
-    fetchDatabaseItems();
-  }, [selectedDatabase]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -293,39 +255,28 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     setInputMessage(value);
 
     if (value.includes("@")) {
-      setShowDropdown(true);
-      // Get the text after the last @ symbol
-      const searchText = value.split("@").pop()?.toLowerCase() || "";
-
-      // Filter items based on search text
+      const searchTerm = value.split("@").pop()?.toLowerCase() || "";
       const filtered = databaseItems.filter((item) => {
-        if (searchText === "") return true;
-
-        const searchTerms = searchText.split(".");
-        if (searchTerms.length > 1) {
-          // If searching with table.column format
-          const [tableSearch, columnSearch] = searchTerms;
-          if (item.type === "column" && item.parentTable) {
-            return (
-              item.parentTable.toLowerCase().includes(tableSearch) &&
-              item.label.toLowerCase().includes(columnSearch)
-            );
-          }
+        if (searchTerm.includes(".")) {
+          // If searching for columns with table prefix (e.g., @table.column)
+          const [tableSearch, columnSearch] = searchTerm.split(".");
+          return (
+            item.type === "column" &&
+            item.parentTable?.toLowerCase().includes(tableSearch) &&
+            item.label.toLowerCase().includes(columnSearch)
+          );
         } else {
-          // Regular search
-          if (item.type === "table") {
-            return item.label.toLowerCase().includes(searchText);
-          } else {
-            return (
-              item.label.toLowerCase().includes(searchText) ||
-              (item.parentTable &&
-                item.parentTable.toLowerCase().includes(searchText))
-            );
-          }
+          // Regular search across all items
+          return (
+            item.label.toLowerCase().includes(searchTerm) ||
+            (item.type === "column" &&
+              item.parentTable?.toLowerCase().includes(searchTerm))
+          );
         }
       });
 
       setFilteredItems(filtered);
+      setShowDropdown(true);
     } else {
       setShowDropdown(false);
     }

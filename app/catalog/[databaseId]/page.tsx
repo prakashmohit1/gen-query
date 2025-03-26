@@ -4,53 +4,37 @@ import { DatabaseList } from "@/components/editor/database-list";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Clock,
-  Database,
-  Search,
-  Star,
-  ChevronRight,
-  Table2,
-  Plus,
-  Pencil,
-} from "lucide-react";
+import { Search, Table2, Plus, Pencil, X } from "lucide-react";
 import { ComingSoonDialog } from "@/components/common/coming-soon-dialog";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   useDatabaseList,
   useSelectedDatabase,
 } from "@/contexts/database-context";
 import {
-  DatabaseConnection,
-  databaseService,
-  DatabaseTable,
-} from "@/lib/services/database.service";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { catalogService } from "@/lib/services/catalog";
+import { Breadcrumbs } from "@/components/common/breadcrumbs";
 
 interface TableDetails {
+  id: string;
   name: string;
+  description: string;
+  owner: string;
+  created_at: string;
   columns: Array<{
     name: string;
     type: string;
     comment?: string;
   }>;
-  owner: string;
-  createdAt: string;
-  connection_id: string;
-  dbType: string;
+  tags: Tag[];
 }
 
 interface Tag {
@@ -60,14 +44,11 @@ interface Tag {
 
 export default function CatalogPage() {
   const params = useParams();
-  const { selectedConnection, connections } = useSelectedDatabase();
+  const { selectedConnection } = useSelectedDatabase();
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedDatabase, setSelectedDatabase] = useState<string | null>(null);
   const [tables, setTables] = useState<TableDetails[]>([]);
-  const [showCreateTable, setShowCreateTable] = useState(false);
-  const [createTableSQL, setCreateTableSQL] = useState("");
   const { databases, isLoading } = useDatabaseList();
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
@@ -78,11 +59,22 @@ export default function CatalogPage() {
     key: "",
     value: "",
   });
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [selectedTableDetails, setSelectedTableDetails] =
-    useState<TableDetails | null>(null);
-  const [connectionId, setConnectionId] = useState<string | null>(null);
   const router = useRouter();
+
+  // Add memoized filtered tables
+  const filteredTables = useMemo(() => {
+    return tables.filter(
+      (table) =>
+        table.name.toLowerCase().includes(filterQuery.toLowerCase()) ||
+        table.description?.toLowerCase().includes(filterQuery.toLowerCase()) ||
+        table.owner?.toLowerCase().includes(filterQuery.toLowerCase()) ||
+        table.tags?.some(
+          (tag) =>
+            tag.key.toLowerCase().includes(filterQuery.toLowerCase()) ||
+            tag.value.toLowerCase().includes(filterQuery.toLowerCase())
+        )
+    );
+  }, [tables, filterQuery]);
 
   useEffect(() => {
     const fetchDatabaseDescription = () => {
@@ -111,12 +103,10 @@ export default function CatalogPage() {
       if (!params.databaseId) return;
 
       try {
-        const response = await catalogService.getTags(
+        const fetchedTags = await catalogService.getTags(
           params.databaseId as string
         );
-        if (response) {
-          setTags(response);
-        }
+        setTags(fetchedTags || []);
       } catch (error) {
         console.error("Error fetching tags:", error);
         toast({
@@ -130,32 +120,20 @@ export default function CatalogPage() {
     fetchTags();
   }, [params.databaseId]);
 
-  const getDbTables = async () => {
+  useEffect(() => {
+    setLoading(loading);
+  }, [isLoading]);
+
+  useEffect(() => {
+    getTables();
+  }, []);
+
+  const getTables = async () => {
     setLoading(true);
     try {
-      const conn = databases.find((conn) => {
-        return conn.catalog_databases?.some(
-          (db) => db.id === params.databaseId
-        );
-      });
-      const db_type = conn?.db_type || "";
-      if (!conn) return;
-      const table = await databaseService.getDatabaseTables(
-        params.databaseId as string,
-        db_type
-      );
-      if ((table?.rows.length || 0) > 0) {
-        setTables(() =>
-          [...new Set(table?.rows.map((row) => row[0]))].map((name) => ({
-            name,
-            columns: [],
-            owner: conn.username || "System user",
-            createdAt: new Date().toLocaleString(),
-            connection_id: conn.id,
-            dbType: conn.db_type,
-          }))
-        );
-      }
+      const res = await catalogService.getTables(params.databaseId as string);
+      console.log("tables", res, selectedConnection);
+      if (Array.isArray(res?.tables)) setTables(res.tables);
     } catch (error) {
       console.error("Error fetching tables:", error);
     } finally {
@@ -163,46 +141,17 @@ export default function CatalogPage() {
     }
   };
 
-  useEffect(() => {
-    getDbTables();
-  }, [databases]);
-
-  useEffect(() => {
-    setLoading(loading);
-  }, [isLoading]);
-
-  const handleTableClick = async (table: TableDetails, db_type: string) => {
-    setSelectedTable(table.name);
-    try {
-      const selectedConn = databases.find((conn) => {
-        return conn.catalog_databases?.some(
-          (db) => db.id === params.databaseId
-        );
-      });
-      if (!selectedConn) return;
-
-      const description = await databaseService.getDatabaseDescription(
-        params.databaseId as string,
-        db_type,
-        table.name
-      );
-
-      if (description) {
-        setSelectedTableDetails(description);
-      }
-    } catch (error) {
-      console.error("Error fetching table description:", error);
-    }
+  const handleTableClick = async (table: TableDetails) => {
+    router.push(`/catalog/${params.databaseId}/${table.id}`);
   };
 
   const handleDescriptionUpdate = async () => {
     try {
-      const response = await catalogService.updateDatabaseDescription(
+      await catalogService.updateDatabaseDescription(
         params.databaseId as string,
         { description: newDescription }
       );
 
-      if (!response.id) throw new Error("Failed to update description");
       setDescription(newDescription);
       setIsEditingDescription(false);
       toast({
@@ -220,15 +169,11 @@ export default function CatalogPage() {
 
   const handleAddTag = async () => {
     try {
-      const response = await catalogService.createTag(
-        params.databaseId as string,
-        {
-          key: newTag.key,
-          value: newTag.value,
-        }
-      );
+      await catalogService.createTag(params.databaseId as string, {
+        key: newTag.key,
+        value: newTag.value,
+      });
 
-      if (!response.id) throw new Error("Failed to add tag");
       setTags([...tags, newTag]);
       setNewTag({ key: "", value: "" });
       setIsAddingTag(false);
@@ -245,28 +190,63 @@ export default function CatalogPage() {
     }
   };
 
+  const handleDeleteDatabaseTag = async (tagToDelete: Tag) => {
+    if (!params.databaseId) return;
+
+    try {
+      await catalogService.deleteTag(
+        params.databaseId as string,
+        tagToDelete.id
+      );
+      setTags(
+        tags.filter(
+          (tag) =>
+            !(tag.key === tagToDelete.key && tag.value === tagToDelete.value)
+        )
+      );
+      toast({
+        title: "Success",
+        description: "Tag deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete tag",
+        variant: "destructive",
+      });
+    }
+  };
+
   const renderTableList = () => {
+    const databaseName =
+      databases
+        ?.find((conn) =>
+          conn.catalog_databases?.some((db) => db.id === params.databaseId)
+        )
+        ?.catalog_databases?.find((db) => db.id === params.databaseId)?.name ||
+      "Database";
+
     return (
       <div className="flex-1 h-full flex flex-col">
-        <div className="border-b p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              className="text-blue-600 hover:text-blue-700"
-              onClick={() => router.push("/catalog")}
-            >
-              {selectedConnection?.name || "Database"}
-            </Button>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Filter tables..."
-                value={filterQuery}
-                onChange={(e) => setFilterQuery(e.target.value)}
-                className="pl-9"
-              />
+        <div className="border-b p-4 flex flex justify-between gap-4">
+          <Breadcrumbs
+            items={[
+              { label: "Catalog", href: "/catalog" },
+              { label: databaseName },
+            ]}
+          />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2"></div>
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Filter tables..."
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -277,28 +257,78 @@ export default function CatalogPage() {
               <div className="py-8 text-center text-gray-500">
                 Loading tables...
               </div>
-            ) : tables.length === 0 ? (
+            ) : filteredTables.length === 0 ? (
               <div className="py-8 text-center text-gray-500">
-                No tables available
+                {filterQuery
+                  ? "No matching tables found"
+                  : "No tables available"}
               </div>
             ) : (
-              tables.map((table, id) => (
+              filteredTables.map((table, id) => (
                 <div
                   key={`${table.name}-${id}`}
                   className="p-4 hover:bg-gray-50 cursor-pointer group"
-                  onClick={() => handleTableClick(table, table.dbType)}
+                  onClick={() => handleTableClick(table)}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
                       <Table2 className="w-4 h-4 text-gray-600" />
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-blue-600 font-medium">
-                        {table.name}
+                    <div className="flex flex-col flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600 font-medium">
+                          {table.name}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {table.columns?.length || 0} columns
+                        </span>
+                      </div>
+                      {/* Table Description */}
+                      <span className="text-sm text-gray-500 mt-1">
+                        {table.description || "No description"}
                       </span>
-                      <span className="text-sm text-gray-500">
-                        {table.owner}
-                      </span>
+                      {/* Table Tags */}
+                      {table.tags && table.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {table.tags.map((tag, index) => (
+                            <div
+                              key={`${tag.key}-${index}`}
+                              className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs group/tag"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span className="text-blue-700">
+                                {tag.key}: {tag.value}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteDatabaseTag(tag);
+                                }}
+                                className="opacity-0 group-hover/tag:opacity-100 hover:text-red-600 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Additional Details */}
+                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                        {table.owner && (
+                          <div className="flex items-center gap-1">
+                            <span>Owner:</span>
+                            <span className="text-gray-900">{table.owner}</span>
+                          </div>
+                        )}
+                        {table.created_at && (
+                          <div className="flex items-center gap-1">
+                            <span>Created:</span>
+                            <span className="text-gray-900">
+                              {new Date(table.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -356,10 +386,20 @@ export default function CatalogPage() {
                   tags.map((tag, index) => (
                     <div
                       key={`${tag.key}-${index}`}
-                      className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs"
+                      className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs group/tag"
                     >
-                      <span className="font-medium">{tag.key}:</span>
-                      <span>{tag.value}</span>
+                      <span className="text-blue-700">
+                        {tag.key}: {tag.value}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteDatabaseTag(tag);
+                        }}
+                        className="opacity-0 group-hover/tag:opacity-100 hover:text-red-600 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </div>
                   ))
                 )}

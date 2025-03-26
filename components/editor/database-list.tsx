@@ -26,7 +26,6 @@ import {
   useDatabaseList,
   useQueryDetails,
   useSelectedDatabase,
-  type DatabaseConnection,
 } from "@/contexts/database-context";
 import { sqlQueriesService } from "@/lib/services/sql-queries";
 import { format } from "date-fns";
@@ -118,7 +117,8 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { databases, isLoading, error, refreshConnections } = useDatabaseList();
+  const { databases, isLoading, error, refreshConnections, fetchTableColumns } =
+    useDatabaseList();
   const { selectedConnection, selectConnection } = useSelectedDatabase();
 
   const handleRefresh = async () => {
@@ -159,26 +159,28 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
 
     setExpandedConnections((prev) => [...prev, databaseId]);
 
+    fetchTableColumns(databaseId);
+
     // Fetch tables if not already loaded
-    if (!connectionTables[databaseId]) {
-      setLoadingTables((prev) => [...prev, databaseId]);
-      try {
-        const table = await databaseService.getDatabaseTables(
-          databaseId,
-          db_type
-        );
-        if ((table?.rows.length || 0) > 0) {
-          setConnectionTables((prev) => ({
-            ...prev,
-            [databaseId]: table as unknown as DatabaseTable,
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching tables:", error);
-      } finally {
-        setLoadingTables((prev) => prev.filter((id) => id !== databaseId));
-      }
-    }
+    // if (!connectionTables[databaseId]) {
+    //   setLoadingTables((prev) => [...prev, databaseId]);
+    //   try {
+    //     const table = await databaseService.getDatabaseTables(
+    //       databaseId,
+    //       db_type
+    //     );
+    //     if ((table?.rows.length || 0) > 0) {
+    //       setConnectionTables((prev) => ({
+    //         ...prev,
+    //         [databaseId]: table as unknown as DatabaseTable,
+    //       }));
+    //     }
+    //   } catch (error) {
+    //     console.error("Error fetching tables:", error);
+    //   } finally {
+    //     setLoadingTables((prev) => prev.filter((id) => id !== databaseId));
+    //   }
+    // }
   };
 
   useEffect(() => {
@@ -267,75 +269,59 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
                     </div>
                   </button>
 
-                  {expandedConnections.includes(db.id) && (
-                    <div className="ml-8 space-y-1">
-                      {loadingTables.includes(db.id) ? (
+                  <div className="ml-8 space-y-1">
+                    {expandedConnections.includes(db.id) &&
+                      (db.loadingTable ? (
                         <div className="flex items-center gap-2 px-2 py-1 text-sm text-gray-500">
                           <Loader2 className="w-4 h-4 animate-spin" />
                           <span>Loading tables...</span>
                         </div>
-                      ) : connectionTables[db.id]?.rows?.length === 0 ? (
+                      ) : db.tables?.length === 0 ? (
                         <div className="px-2 py-1 text-sm text-gray-500">
                           No tables found
                         </div>
                       ) : (
                         // Group tables and their columns
-                        (() => {
-                          const tableMap = new Map();
-                          connectionTables[db.id]?.rows?.forEach((row) => {
-                            const tableName = row[0];
-                            const columnName = row[1];
-                            if (!tableMap.has(tableName)) {
-                              tableMap.set(tableName, []);
-                            }
-                            if (columnName) {
-                              tableMap.get(tableName).push(columnName);
-                            }
-                          });
 
-                          return Array.from(tableMap.entries()).map(
-                            ([tableName, columns]) => (
-                              <div key={tableName} className="space-y-0.5">
-                                <div
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setExpandedTables((prev) =>
-                                      prev.includes(tableName)
-                                        ? prev.filter((t) => t !== tableName)
-                                        : [...prev, tableName]
-                                    );
-                                  }}
-                                  className="flex items-center gap-2 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer"
-                                >
-                                  <Table2 className="w-4 h-4" />
-                                  <span className="flex-1">{tableName}</span>
-                                  <ChevronRight
-                                    className={cn(
-                                      "w-3 h-3 transition-transform",
-                                      expandedTables.includes(tableName) &&
-                                        "rotate-90"
-                                    )}
-                                  />
-                                </div>
-                                {expandedTables.includes(tableName) && (
-                                  <div className="ml-6 border-l border-gray-200 pl-2">
-                                    {columns.map((columnName: string) => (
-                                      <div
-                                        key={`${tableName}-${columnName}`}
-                                        className="flex items-center gap-2 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 rounded-md"
-                                      >
-                                        <span>{columnName}</span>
-                                      </div>
-                                    ))}
-                                  </div>
+                        db.tables?.map((table) => (
+                          <div key={table.name} className="space-y-0.5">
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedTables((prev) =>
+                                  prev.includes(table.name)
+                                    ? prev.filter((t) => t !== table.name)
+                                    : [...prev, table.name]
+                                );
+                              }}
+                              className="flex items-center gap-2 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer"
+                            >
+                              <Table2 className="w-4 h-4" />
+                              <span className="flex-1">{table.name}</span>
+                              <ChevronRight
+                                className={cn(
+                                  "w-3 h-3 transition-transform",
+                                  expandedTables.includes(table.name) &&
+                                    "rotate-90"
                                 )}
+                              />
+                            </div>
+                            {/* {table?.columns.length > 0 && (
+                              <div className="ml-6 border-l border-gray-200 pl-2">
+                                {table.columns.map((column: any) => (
+                                  <div
+                                    key={`${table.name}-${column.name}`}
+                                    className="flex items-center gap-2 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-50 rounded-md"
+                                  >
+                                    <span>{column.name}</span>
+                                  </div>
+                                ))}
                               </div>
-                            )
-                          );
-                        })()
-                      )}
-                    </div>
-                  )}
+                            )} */}
+                          </div>
+                        ))
+                      ))}
+                  </div>
                 </div>
               ))}
             </div>

@@ -3,21 +3,7 @@ import { sqlQueriesService } from "./sql-queries";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { signOut } from "next-auth/react";
-
-export interface DatabaseConnection {
-  id?: string;
-  name: string;
-  description: string;
-  db_type: string;
-  host: string;
-  port: number;
-  username: string;
-  default_database_name: string;
-  connection_options: Record<string, any>;
-  is_active?: boolean;
-  status?: string;
-  password?: string;
-}
+import { DatabaseConnection } from "@/contexts/database-context";
 
 export interface CreateDatabaseConnection {
   name: string;
@@ -59,23 +45,9 @@ export interface DatabaseService {
 
 class DatabaseServiceImpl implements DatabaseService {
   private baseUrl = "/api/v1/database-connections";
+  private catalogBaseUrl = "/api/v1/catalog/databases";
 
-  async getDatabaseConnections(): Promise<
-    {
-      id: string;
-      name: string;
-      host: string;
-      port: number | string;
-      username: string;
-      password?: string;
-      database: string;
-      db_type: string;
-      is_active: boolean;
-      description?: string;
-      connection_options?: Record<string, any>;
-      status?: string;
-    }[]
-  > {
+  async getDatabaseConnections(): Promise<DatabaseConnection[]> {
     const response = await fetch(this.baseUrl, {
       headers: {
         "Content-Type": "application/json",
@@ -176,27 +148,41 @@ class DatabaseServiceImpl implements DatabaseService {
     return response.json();
   }
 
-  async getDatabaseTables(database_id: string, db_type: string) {
-    const TABLE_QUERY = {
-      postgresql: `SELECT table_name, column_name, data_type
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-            ORDER BY table_name, ordinal_position;`,
-      mysql: `SELECT 
-            TABLE_NAME AS 'table_name',
-            COLUMN_NAME AS 'column_name',
-            DATA_TYPE AS 'data_type'
-        FROM 
-            INFORMATION_SCHEMA.COLUMNS
-        WHERE 
-            TABLE_SCHEMA = DATABASE();`,
-    };
-    const response = await sqlQueriesService.executeSQLQuery({
-      query_text: TABLE_QUERY[db_type as keyof typeof TABLE_QUERY],
-      database_id,
-      params: {},
-    });
-    if (response.result) return response.result || [];
+  async getDatabaseTables(database_id: string) {
+    // const TABLE_QUERY = {
+    //   postgresql: `SELECT table_name, column_name, data_type
+    //         FROM information_schema.columns
+    //         WHERE table_schema = 'public'
+    //         ORDER BY table_name, ordinal_position;`,
+    //   mysql: `SELECT
+    //         TABLE_NAME AS 'table_name',
+    //         COLUMN_NAME AS 'column_name',
+    //         DATA_TYPE AS 'data_type'
+    //     FROM
+    //         INFORMATION_SCHEMA.COLUMNS
+    //     WHERE
+    //         TABLE_SCHEMA = DATABASE();`,
+    // };
+    // const response = await sqlQueriesService.executeSQLQuery({
+    //   query_text: TABLE_QUERY[db_type as keyof typeof TABLE_QUERY],
+    //   database_id,
+    //   params: {},
+    // });
+    // if (response.result) return response.result || [];
+    const response = await fetch(
+      `${this.catalogBaseUrl}/${database_id}/tables/columns`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getCookie("id_token")}`,
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Failed to create database connection");
+    }
+    return response.json();
   }
 
   async getDatabaseDescription(

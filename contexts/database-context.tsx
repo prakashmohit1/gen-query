@@ -23,11 +23,40 @@ export interface DatabaseConnection {
   created_at?: string;
 }
 
+interface CatalogTable {
+  id: string;
+  name: string;
+  description: string;
+  database_id: string;
+  schema: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  updated_by: string;
+  columns?: CatalogColumn[];
+}
+
+interface CatalogColumn {
+  id: string;
+  name: string;
+  description: string;
+  table_id: string;
+  data_type: string;
+  is_nullable: boolean;
+  ordinal_position: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  updated_by: string;
+}
+
 interface CatalogDatabase {
   id: string;
   name: string;
   description?: string;
   connection_id: string;
+  tables?: CatalogTable[];
+  loadingTable?: boolean;
 }
 
 interface DatabaseState {
@@ -47,6 +76,7 @@ interface DatabaseContextType extends DatabaseState {
   selectedDatabase: CatalogDatabase | null;
   movedQueryText: string | null;
   setMovedQueryText: (text: string | null) => void;
+  fetchTableColumns: (databaseId: string) => void;
 }
 
 // Context
@@ -81,6 +111,30 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const fetchTableColumns = async (databaseId: string) => {
+    try {
+      const response = await databaseService.getDatabaseTables(databaseId);
+      console.log("state.connections", state.connections);
+      const mappedConnections = state.connections.map((conn) => {
+        conn.catalog_databases?.forEach((db: CatalogDatabase) => {
+          if (db.id === databaseId) {
+            db.tables = response.tables;
+            db.loadingTable = false;
+          }
+        });
+        return conn;
+      });
+
+      setState((prev) => ({
+        ...prev,
+        connections: mappedConnections,
+        isLoading: false,
+      }));
+    } catch (e) {
+      console.error(e);
+    }
+    // setState({ ...state });
+  };
   // Fetch connections
   const fetchConnections = async () => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
@@ -88,10 +142,14 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
       const connections = await databaseService.getDatabaseConnections();
 
       // Map the response to match our interface
-      const mappedConnections = connections.map((conn) => ({
-        ...conn,
-        database_name: conn.database || conn.database_name, // Handle both property names
-      }));
+      const mappedConnections = connections.map((conn: DatabaseConnection) => {
+        conn.catalog_databases?.map((db: any) => {
+          db.loadingTable = true;
+        });
+        return {
+          ...conn,
+        };
+      });
 
       setState((prev) => ({
         ...prev,
@@ -116,6 +174,14 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchConnections();
   }, []);
+
+  useEffect(() => {
+    state.connections.forEach((conn) => {
+      conn.catalog_databases?.map((db: any) => {
+        fetchTableColumns(db.id);
+      });
+    });
+  }, [state.connections]);
 
   // Save selected connection and database to localStorage
   useEffect(() => {
@@ -164,6 +230,7 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     selectedConnection,
     selectedDatabase,
     setMovedQueryText,
+    fetchTableColumns,
   };
 
   return (
@@ -204,8 +271,20 @@ export function useSelectedDatabase() {
 
 // Utility hook for database list
 export function useDatabaseList() {
-  const { connections, isLoading, error, refreshConnections } = useDatabase();
-  return { databases: connections, isLoading, error, refreshConnections };
+  const {
+    connections,
+    isLoading,
+    error,
+    refreshConnections,
+    fetchTableColumns,
+  } = useDatabase();
+  return {
+    databases: connections,
+    isLoading,
+    error,
+    refreshConnections,
+    fetchTableColumns,
+  };
 }
 
 // Utility hook for database list

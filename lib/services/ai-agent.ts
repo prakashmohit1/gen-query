@@ -8,9 +8,17 @@ export interface AiAgentResponse {
   error?: string;
 }
 
+export interface ChatOptions {
+  filter: string;
+  limit: number;
+  table_name?: string;
+  columns?: string[];
+}
+
 export interface ChatRequest {
-  database_server_connection_id?: string;
-  messages: Message[];
+  database_server_connection_id: string;
+  options: ChatOptions;
+  user_message: string;
 }
 
 export interface ChatConversation {
@@ -65,9 +73,9 @@ export class AiAgentService {
     if (conversationId) {
       // If conversationId exists, use PUT to update existing conversation
       return this.makeRequest<AiAgentResponse>(
-        `/api/v1/chat-conversations/${conversationId}`,
+        `/api/v1/chat-conversations/${conversationId}/messages`,
         {
-          method: "PUT",
+          method: "POST",
           body: JSON.stringify(request),
         }
       );
@@ -100,9 +108,9 @@ export class AiAgentService {
     messages: Message[]
   ): Promise<ChatConversation> {
     return this.makeRequest<ChatConversation>(
-      `/api/v1/chat-conversations/${conversationId}`,
+      `/api/v1/chat-conversations/${conversationId}/messages`,
       {
-        method: "PUT",
+        method: "POST",
         body: JSON.stringify({ messages }),
       }
     );

@@ -38,6 +38,19 @@ interface ChatMessage extends Message {
   timestamp: Date;
 }
 
+interface ChatOptions {
+  table_name: string;
+  columns?: string[];
+  filter: string;
+  limit: number;
+}
+
+interface ChatRequest {
+  database_server_connection_id: string | undefined;
+  options: ChatOptions;
+  user_message: string;
+}
+
 interface SuggestedQuestion {
   id: number;
   text: string;
@@ -64,6 +77,12 @@ interface DropdownItem {
   type: "table" | "column";
   parentTable?: string;
   schema?: string;
+}
+
+// Add new interface for selected items
+interface SelectedItems {
+  tableName: string;
+  columns: string[];
 }
 
 const DeleteConfirmationDialog = ({
@@ -125,13 +144,19 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     string | null
   >(null);
   const { selectedDatabase, selectedConnection } = useSelectedDatabase();
-  const { databases } = useDatabaseList();
+  const { databases, fetchTableColumns } = useDatabaseList();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<
     string | null
   >(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  // Add state for selected items
+  const [selectedItems, setSelectedItems] = useState<SelectedItems>({
+    tableName: "",
+    columns: [],
+  });
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Create a memoized list of database items from the context
   const databaseItems = useMemo(() => {
@@ -166,6 +191,17 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
 
     return items;
   }, [selectedDatabase]);
+
+  // Fetch tables when database changes
+  useEffect(() => {
+    const shouldFetchTables =
+      selectedDatabase &&
+      (!selectedDatabase.tables || selectedDatabase.tables.length === 0);
+
+    if (shouldFetchTables) {
+      fetchTableColumns(selectedDatabase.id);
+    }
+  }, [selectedDatabase?.id]); // Only depend on the database ID
 
   const suggestedQuestions: SuggestedQuestion[] = [
     {
@@ -204,47 +240,57 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     setIsLoading(true);
 
     try {
-      const updatedMessages = [
-        ...messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        { role: Role.USER, content: text },
-      ];
+      // Prepare the payload
+      const payload: ChatRequest = {
+        database_server_connection_id: selectedConnection?.id || "",
+        options: {
+          table_name: selectedItems.tableName,
+          columns:
+            selectedItems.columns.length > 0
+              ? selectedItems.columns
+              : undefined,
+        },
+        user_message: text,
+      };
 
       const response = await aiAgentServices.sendMessage(
-        {
-          database_server_connection_id: databases.find(
-            (db) => db.id === selectedDatabaseId
-          )?.id,
-          messages: updatedMessages,
-        },
+        payload,
         currentConversationId || undefined
       );
 
       // Add assistant's response to the messages
-      if (response.messages) {
-        const newMessages = [
-          ...messages,
-          newUserMessage,
-          {
-            id: messages.length + 2,
-            role: Role.ASSISTANT,
-            content: response.messages.slice(-1)[0].content,
-            timestamp: new Date(),
-          },
-        ];
+      if (response) {
+        const newAssistantMessage: ChatMessage = {
+          id: messages.length + 2,
+          role: response.role as Role,
+          content: response.content,
+          timestamp: new Date(),
+        };
 
-        setMessages(newMessages);
+        setMessages((prev) => [...prev, newAssistantMessage]);
 
         // If this was a new conversation (POST), set the conversation ID from response
         if (!currentConversationId && response.id) {
           setCurrentConversationId(response.id);
         }
       }
+
+      // Reset selected items after sending
+      setSelectedItems({ tableName: "", columns: [] });
     } catch (error) {
       console.error("Error sending message:", error);
-      // Optionally show error message to user
+      // Show error message to user
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to send message";
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: messages.length + 2,
+          role: Role.ASSISTANT,
+          content: errorMessage,
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -256,29 +302,39 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
 
     if (value.includes("@")) {
       const searchTerm = value.split("@").pop()?.toLowerCase() || "";
-      const filtered = databaseItems.filter((item) => {
-        if (searchTerm.includes(".")) {
-          // If searching for columns with table prefix (e.g., @table.column)
-          const [tableSearch, columnSearch] = searchTerm.split(".");
-          return (
-            item.type === "column" &&
-            item.parentTable?.toLowerCase().includes(tableSearch) &&
-            item.label.toLowerCase().includes(columnSearch)
-          );
-        } else {
-          // Regular search across all items
-          return (
-            item.label.toLowerCase().includes(searchTerm) ||
-            (item.type === "column" &&
-              item.parentTable?.toLowerCase().includes(searchTerm))
-          );
-        }
-      });
-
-      setFilteredItems(filtered);
+      updateFilteredItems(searchTerm);
       setShowDropdown(true);
     } else {
       setShowDropdown(false);
+    }
+  };
+
+  const updateFilteredItems = (searchTerm: string = "") => {
+    const filtered = databaseItems.filter((item) => {
+      if (searchTerm.includes(".")) {
+        // If searching for columns with table prefix (e.g., @table.column)
+        const [tableSearch, columnSearch] = searchTerm.split(".");
+        return (
+          item.type === "column" &&
+          item.parentTable?.toLowerCase().includes(tableSearch) &&
+          item.label.toLowerCase().includes(columnSearch)
+        );
+      } else {
+        // Regular search across all items
+        return (
+          item.label.toLowerCase().includes(searchTerm) ||
+          (item.type === "column" &&
+            item.parentTable?.toLowerCase().includes(searchTerm))
+        );
+      }
+    });
+    setFilteredItems(filtered);
+  };
+
+  const handleAtButtonClick = () => {
+    if (buttonRef.current) {
+      updateFilteredItems();
+      setShowDropdown(true);
     }
   };
 
@@ -293,6 +349,19 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     setInputMessage(newValue);
     setShowDropdown(false);
     inputRef.current?.focus();
+
+    // Update selected items based on selection
+    if (item.type === "table") {
+      setSelectedItems((prev) => ({
+        ...prev,
+        tableName: item.label,
+      }));
+    } else if (item.type === "column") {
+      setSelectedItems((prev) => ({
+        ...prev,
+        columns: [...prev.columns, item.label.split(" ")[0]], // Extract column name without type
+      }));
+    }
   };
 
   const fetchChatHistory = async () => {
@@ -685,36 +754,45 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
                 </div>
               </div>
             )}
-            <textarea
-              ref={inputRef}
-              value={inputMessage}
-              onChange={(e) => handleInputChange(e)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder="@ for objects or / for commands"
-              className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 resize-none overflow-hidden"
-              disabled={isLoading}
-              rows={1}
-              style={{
-                minHeight: "44px",
-                maxHeight: "120px",
-              }}
-            />
-            <button
-              onClick={() => handleSendMessage()}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors ${
-                !inputMessage.trim() || isLoading
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-blue-600 hover:bg-blue-50 border border-blue-200"
-              }`}
-              disabled={!inputMessage.trim() || isLoading}
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            <div className="relative">
+              {/* <button
+                ref={buttonRef}
+                onClick={handleAtButtonClick}
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                <span className="text-gray-500 text-sm font-medium">@</span>
+              </button> */}
+              <textarea
+                ref={inputRef}
+                value={inputMessage}
+                onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder="Type @ for tables and columns"
+                className="w-full px-2 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 resize-none overflow-hidden"
+                disabled={isLoading}
+                rows={1}
+                style={{
+                  minHeight: "44px",
+                  maxHeight: "120px",
+                }}
+              />
+              <button
+                onClick={() => handleSendMessage()}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors ${
+                  !inputMessage.trim() || isLoading
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-blue-600 hover:bg-blue-50 border border-blue-200"
+                }`}
+                disabled={!inputMessage.trim() || isLoading}
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>

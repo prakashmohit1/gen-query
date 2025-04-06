@@ -1,0 +1,126 @@
+trigger:
+  - main
+  - develop
+
+variables:
+  # Node version
+  NODE_VERSION: "18.x"
+  # Environment names
+  DEV_ENVIRONMENT: "development"
+  PROD_ENVIRONMENT: "production"
+
+stages:
+  - stage: Build
+    displayName: "Build Stage"
+    jobs:
+      - job: Build
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+            displayName: "Install Node.js"
+
+          - script: |
+              npm ci
+            displayName: "Install Dependencies"
+
+          - script: |
+              npm run lint
+            displayName: "Run Linting"
+
+          - script: |
+              npm run test
+            displayName: "Run Tests"
+
+          - script: |
+              npm run build
+            displayName: "Build Application"
+
+          - task: ArchiveFiles@2
+            inputs:
+              rootFolderOrFile: "$(System.DefaultWorkingDirectory)/build"
+              includeRootFolder: false
+              archiveType: "zip"
+              archiveFile: "$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip"
+              replaceExistingArchive: true
+            displayName: "Archive Build Files"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+              ArtifactName: "drop"
+              publishLocation: "Container"
+            displayName: "Publish Build Artifacts"
+
+  - stage: DeployToDev
+    displayName: "Deploy to Development"
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    jobs:
+      - deployment: Deploy
+        pool:
+          vmImage: "ubuntu-latest"
+        environment: $(DEV_ENVIRONMENT)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  inputs:
+                    azureSubscription: "Your-Azure-Subscription"
+                    appName: "your-dev-app-name"
+                    package: "$(Pipeline.Workspace)/drop/$(Build.BuildId).zip"
+                    deploymentMethod: "auto"
+                  displayName: "Deploy to Azure Web App - Dev"
+
+  - stage: DeployToProd
+    displayName: "Deploy to Production"
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: Deploy
+        pool:
+          vmImage: "ubuntu-latest"
+        environment: $(PROD_ENVIRONMENT)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  inputs:
+                    azureSubscription: "Your-Azure-Subscription"
+                    appName: "your-prod-app-name"
+                    package: "$(Pipeline.Workspace)/drop/$(Build.BuildId).zip"
+                    deploymentMethod: "auto"
+                  displayName: "Deploy to Azure Web App - Prod"
+
+  - stage: RunE2ETests
+    displayName: "Run E2E Tests"
+    dependsOn:
+      - DeployToDev
+      - DeployToProd
+    condition: succeeded()
+    jobs:
+      - job: E2ETests
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+            displayName: "Install Node.js"
+
+          - script: |
+              npm ci
+              npm run test:e2e
+            displayName: "Run E2E Tests"
+
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: "JUnit"
+              testResultsFiles: "**/junit.xml"
+              mergeTestResults: true
+              testRunTitle: "E2E Tests"
+            displayName: "Publish Test Results"

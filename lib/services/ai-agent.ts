@@ -3,6 +3,7 @@ import { getCookie } from "../utils";
 
 export interface AiAgentResponse {
   id?: string;
+  conversation_id?: string;
   messages: Message[];
   sql?: string;
   error?: string;

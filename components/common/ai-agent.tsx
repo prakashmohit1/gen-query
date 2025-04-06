@@ -270,8 +270,8 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
         setMessages((prev) => [...prev, newAssistantMessage]);
 
         // If this was a new conversation (POST), set the conversation ID from response
-        if (!currentConversationId && response.id) {
-          setCurrentConversationId(response.id);
+        if (!currentConversationId && response.conversation_id) {
+          setCurrentConversationId(response.conversation_id);
         }
       }
 

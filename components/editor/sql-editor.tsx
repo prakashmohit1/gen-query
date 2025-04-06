@@ -191,7 +191,7 @@ export function SQLEditor({
   }, [selectedDatabase?.id]);
 
   const handleAddQuery = () => {
-    const newQueryId = Date.now().toString(); // Use timestamp as ID for new tabs
+    const newQueryId = "temp-" + Date.now().toString(); // Use timestamp as ID for new tabs
     const newQuery: SavedQuery = {
       id: newQueryId,
       name: new Date().toLocaleString(),
@@ -493,7 +493,7 @@ export function SQLEditor({
               database_id: selectedDatabase.id,
             };
 
-            if (!query.id) {
+            if (!query.id || query.id?.startsWith("temp-")) {
               // For new queries, use saveQuery
               await savedQueriesService.saveQuery(queryPayload);
 
@@ -579,6 +579,13 @@ export function SQLEditor({
   // Save query function
   const saveQuery = useCallback(
     async (queryText: string) => {
+      console.log(
+        "aaaa",
+        selectedDatabase,
+        activeQueryId,
+        queryText,
+        lastSavedText
+      );
       if (!selectedDatabase || !activeQueryId || queryText === lastSavedText)
         return;
 
@@ -630,10 +637,6 @@ export function SQLEditor({
         }
 
         setLastSavedText(queryText);
-        toast({
-          title: "Success",
-          description: "Query auto-saved",
-        });
       } catch (error) {
         console.error("Auto-save failed:", error);
         toast({
@@ -711,15 +714,15 @@ export function SQLEditor({
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-4">
           <Button
-            size="sm"
-            className="text-[13px] h-[30px] bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors"
+            size="xs"
+            className="text-[13px] h-[26px] px-3 bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors"
             onClick={handleExecuteQuery}
             disabled={isExecuting || !selectedDatabase}
           >
-            <Play className="w-4 h-4" />
+            <Play className="w-3 h-3 mr-1.5" />
             {isExecuting ? (
-              <span className="flex items-center gap-2">
-                <Clock className="w-4 h-4 animate-spin" />
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3 h-3 animate-spin" />
                 Executing...
               </span>
             ) : (
@@ -731,20 +734,32 @@ export function SQLEditor({
               {queries.find((query) => query.id === activeQueryId)?.name ||
                 "New Query"}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-xs text-gray-500">
               {getCurrentTimestamp()}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <DatabaseSelector />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => saveQuery(value)}
+            disabled={!value.trim() || !selectedDatabase || isSaving}
+            className="h-[26px] px-3"
+          >
+            <Save className="w-3 h-3 mr-1.5" />
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+          <div className="h-[26px]">
+            <DatabaseSelector />
+          </div>
         </div>
       </div>
 
       <div className="flex items-center gap-1 px-2 pt-2 border-b bg-gray-50">
         {isLoadingSavedQueries ? (
-          <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-500">
-            <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="flex items-center gap-2 px-4 py-1 text-sm text-gray-500">
+            <Loader2 className="w-3 h-3 animate-spin" />
             Loading saved queries...
           </div>
         ) : (
@@ -752,7 +767,7 @@ export function SQLEditor({
             {queries?.map((query, index) => (
               <div
                 key={`${query.id}-${index}`}
-                className={`group flex items-center gap-2 px-4 py-2 text-sm rounded-t-lg cursor-pointer border-x border-t transition-colors ${
+                className={`group flex items-center gap-2 px-3 py-1.5 text-sm rounded-t-lg cursor-pointer border-x border-t transition-colors ${
                   activeQueryId === query.id
                     ? "bg-white text-gray-900 border-gray-200"
                     : "bg-gray-50 text-gray-600 border-transparent hover:bg-gray-100"
@@ -782,34 +797,21 @@ export function SQLEditor({
                     }}
                     className="opacity-0 group-hover:opacity-100 hover:text-red-500"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3 h-3" />
                   </button>
                 )}
               </div>
             ))}
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               onClick={handleAddQuery}
-              className="h-8 px-2 text-gray-500 hover:text-blue-600"
+              className="h-7 px-2 text-gray-500 hover:text-blue-600"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3 h-3" />
             </Button>
           </>
         )}
-      </div>
-      <div className="flex items-center justify-between p-4 border-t">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => saveQuery(value)}
-            disabled={!value.trim() || !selectedDatabase || isSaving}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {isSaving ? "Saving..." : "Save Query"}
-          </Button>
-        </div>
       </div>
 
       <ResizablePanelGroup direction="vertical">
@@ -856,17 +858,17 @@ export function SQLEditor({
         </ResizablePanel>
 
         <ResizableHandle />
-        <div className="p-4 border-t">
-          <div className="flex flex-wrap gap-4">
+        <div className="p-2 border-t">
+          <div className="flex flex-wrap gap-2">
             {Object.entries(parameters).map(([name, value]) => (
-              <div key={name} className="flex items-center gap-2">
+              <div key={name} className="flex items-center gap-1">
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium text-gray-700">
+                  <div className="flex items-center gap-1">
+                    <label className="text-xs font-medium text-gray-700">
                       {name}
                     </label>
                     <button className="text-gray-400 hover:text-gray-600">
-                      <Settings2 className="w-4 h-4" />
+                      <Settings2 className="w-3 h-3" />
                     </button>
                   </div>
                   <Input
@@ -874,23 +876,23 @@ export function SQLEditor({
                     onChange={(e) =>
                       handleParameterChange(name, e.target.value)
                     }
-                    className="h-8 w-[200px]"
+                    className="h-7 w-[180px] text-sm"
                     placeholder="Enter value..."
                   />
                 </div>
                 <button
                   onClick={() => handleRemoveParameter(name)}
-                  className="self-end h-8 px-2 text-gray-400 hover:text-red-500"
+                  className="self-end h-7 px-1 text-gray-400 hover:text-red-500"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3" />
                 </button>
               </div>
             ))}
             <Button
               variant="outline"
-              size="sm"
+              size="xs"
               onClick={handleAddParameter}
-              className="h-8"
+              className="px-3 py-1"
             >
               Add parameter
             </Button>

@@ -104,7 +104,7 @@ export default function QueryHistoryPage() {
     ];
 
     const csvData = queries.map((query) => [
-      query.query_text.replace(/"/g, '""'), // Escape quotes in query text
+      query.executed_query.replace(/"/g, '""'), // Escape quotes in query text
       format(new Date(query.created_at), "MMM d, yyyy HH:mm:ss"),
       `${query.execution_time_ms} ms`,
       query.source || "Direct Query",
@@ -131,7 +131,7 @@ export default function QueryHistoryPage() {
 
   const handleExportJSON = () => {
     const jsonData = queries.map((query) => ({
-      query: query.query_text,
+      query: query.executed_query,
       started_at: query.created_at,
       duration: `${query.execution_time_ms} ms`,
       source: query.source || "Direct Query",
@@ -372,7 +372,7 @@ export default function QueryHistoryPage() {
                     </TableCell>
                     <TableCell className="font-mono text-sm max-w-[300px]">
                       <div className="overflow-x-auto whitespace-nowrap">
-                        {query.query_text}
+                        {query.executed_query}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -412,7 +412,7 @@ export default function QueryHistoryPage() {
                             setDeleteDialog({
                               open: true,
                               queryId: query.id,
-                              queryText: query.query_text,
+                              queryText: query.executed_query,
                             })
                           }
                         >

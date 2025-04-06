@@ -5,6 +5,7 @@ export interface SQLQuery {
   name: string;
   description?: string;
   query_text: string;
+  executed_query?: string;
   params?: Record<string, any>;
   connection_id: string;
   created_at: string;

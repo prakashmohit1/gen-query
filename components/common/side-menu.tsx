@@ -16,29 +16,54 @@ import { cn } from "@/lib/utils";
 
 const menuItems = [
   {
-    title: "DB Editor",
-    href: "/db-editor",
-    icon: Code,
+    category: "",
+    items: [
+      {
+        title: "Catalog",
+        href: "/catalog",
+        icon: Blocks,
+      },
+      {
+        title: "Databases",
+        href: "/computes",
+        icon: Database,
+      },
+      {
+        title: "Recent",
+        href: "/recent",
+        icon: History,
+      },
+      {
+        title: "Access Control",
+        href: "/settings/identity",
+        icon: FileText,
+      },
+    ],
   },
   {
-    title: "Queries",
-    href: "/queries",
-    icon: FileText,
-  },
-  {
-    title: "Catalog",
-    href: "/catalog",
-    icon: Blocks,
-  },
-  {
-    title: "Databases",
-    href: "/computes",
-    icon: Database,
-  },
-  {
-    title: "Query History",
-    href: "/query-history",
-    icon: History,
+    category: "SQL",
+    items: [
+      {
+        title: "DB Editor",
+        href: "/db-editor",
+        icon: Code,
+      },
+      {
+        title: "Queries",
+        href: "/queries",
+        icon: FileText,
+      },
+      {
+        title: "SQL Compute",
+        href: "/sql-compute",
+        icon: Database,
+      },
+      {
+        title: "Query History",
+        href: "/query-history",
+        icon: History,
+      },
+    ],
   },
 ];
 
@@ -68,24 +93,31 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
             <DrawerTitle>Menu</DrawerTitle>
           </DrawerHeader>
           <nav className="flex flex-col p-4">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    pathname === item.href
-                      ? "bg-blue-50 text-blue-900"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  }`}
-                  onClick={() => setOpen(false)}
-                >
-                  <Icon className="h-4 w-4 mr-2" />
-                  {item.title}
-                </Link>
-              );
-            })}
+            {menuItems.map((category) => (
+              <div key={category.category} className="mb-6">
+                <h3 className="text-xs font-semibold text-gray-500 mb-2 px-3">
+                  {category.category}
+                </h3>
+                {category.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        pathname === item.href
+                          ? "bg-blue-50 text-blue-900"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      }`}
+                      onClick={() => setOpen(false)}
+                    >
+                      <Icon className="h-4 w-4 mr-2" />
+                      {item.title}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </DrawerContent>
       </Drawer>
@@ -108,30 +140,42 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
           </h2>
         </div>
         <nav className="flex flex-col p-4">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  pathname === item.href
-                    ? "bg-blue-50 text-blue-900"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
+          {menuItems.map((category) => (
+            <div key={category.category} className="mb-6">
+              <h3
+                className={cn(
+                  "text-xs font-semibold text-gray-500 mb-2 px-3",
+                  isCollapsed && "opacity-0"
+                )}
               >
-                <Icon className="h-4 w-4 flex-shrink-0 mr-2" />
-                <span
-                  className={cn(
-                    "transition-all duration-300",
-                    isCollapsed ? "opacity-0 w-0" : "opacity-100 w-auto"
-                  )}
-                >
-                  {item.title}
-                </span>
-              </Link>
-            );
-          })}
+                {category.category}
+              </h3>
+              {category.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      pathname === item.href
+                        ? "bg-blue-50 text-blue-900"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0 mr-2" />
+                    <span
+                      className={cn(
+                        "transition-all duration-300",
+                        isCollapsed ? "opacity-0 w-0" : "opacity-100 w-auto"
+                      )}
+                    >
+                      {item.title}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
       </div>
     </>

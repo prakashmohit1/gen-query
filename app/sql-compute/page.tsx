@@ -17,6 +17,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -29,11 +35,21 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
+import { Play, Pause, MoreVertical, History, Edit, Trash2, Shield } from "lucide-react";
+
+interface WarehouseData {
+  status: string;
+  name: string;
+  createdBy: string;
+  size: string;
+  active: boolean;
+  type: string;
+  isRunning: boolean;
+}
 
 export default function SQLComputePage() {
   const [activeTab, setActiveTab] = useState("sql-compute");
-
-  const mockData = [
+  const [warehouses, setWarehouses] = useState<WarehouseData[]>([
     {
       status: "Running",
       name: "warehouse-1",
@@ -41,9 +57,20 @@ export default function SQLComputePage() {
       size: "X-Large",
       active: true,
       type: "Serverless",
+      isRunning: true,
     },
     // Add more mock data as needed
-  ];
+  ]);
+
+  const toggleWarehouseState = (index: number) => {
+    setWarehouses(prevWarehouses => 
+      prevWarehouses.map((warehouse, i) => 
+        i === index 
+          ? { ...warehouse, isRunning: !warehouse.isRunning, status: warehouse.isRunning ? "Stopped" : "Running" }
+          : warehouse
+      )
+    );
+  };
 
   return (
     <div className="p-6">
@@ -202,7 +229,7 @@ export default function SQLComputePage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockData.map((row, index) => (
+            {warehouses.map((row, index) => (
               <TableRow key={index}>
                 <TableCell>{row.status}</TableCell>
                 <TableCell>{row.name}</TableCell>
@@ -211,9 +238,45 @@ export default function SQLComputePage() {
                 <TableCell>{row.active ? "Yes" : "No"}</TableCell>
                 <TableCell>{row.type}</TableCell>
                 <TableCell>
-                  <Button variant="outline" size="sm">
-                    Edit
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => toggleWarehouseState(index)}
+                    >
+                      {row.isRunning ? (
+                        <Pause className="h-4 w-4" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Shield className="h-4 w-4 mr-2" />
+                          Permissions
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <History className="h-4 w-4 mr-2" />
+                          Query History
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

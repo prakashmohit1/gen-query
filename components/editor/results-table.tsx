@@ -436,7 +436,7 @@ export function ResultsTable({
                             });
                           }}
                         >
-                          <SelectTrigger className="w-[200px] flex-1">
+                          <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder="Select column" />
                           </SelectTrigger>
                           <SelectContent>
@@ -505,7 +505,8 @@ export function ResultsTable({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="stacked">Stacked</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="percent">Percentage</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -556,7 +557,7 @@ export function ResultsTable({
                   />
                 </div>
               ) : (
-                <div className="h-[calc(100%-80px)] flex flex-col items-center justify-center text-gray-500">
+                <div className="h-full flex flex-col items-center justify-center text-gray-500">
                   <div className="w-24 h-24 mb-4">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

@@ -2,7 +2,7 @@ export const DATABASES = [
   {
     id: 1,
     name: "PostgreSQL",
-    value: "postgres",
+    value: "postgresql",
     icon: "https://www.postgresql.org/favicon.ico",
   },
   {

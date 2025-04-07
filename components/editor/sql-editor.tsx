@@ -88,7 +88,7 @@ export function SQLEditor({
   onExecute,
   isExecuting = false,
   tables = [],
-  dbType = "postgres",
+  dbType = "postgresql",
   parameters,
   setParameters,
   results,
@@ -410,7 +410,7 @@ export function SQLEditor({
     ];
 
     // Add all keywords with their types
-    [...keywords, ...(dbType === "postgres" ? postgresKeywords : [])].forEach(
+    [...keywords, ...(dbType === "postgresql" ? postgresKeywords : [])].forEach(
       (keyword) => {
         completions.push({
           label: keyword,

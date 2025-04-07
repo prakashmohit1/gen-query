@@ -30,7 +30,7 @@ const DATA_SOURCES = [
   {
     id: 1,
     name: "PostgreSQL",
-    value: "postgres",
+    value: "postgresql",
     icon: "🐘",
   },
   {
@@ -250,7 +250,7 @@ export default function ConnectDatabase({
   }, [open, onClose]);
 
   const handleDataSourceSelect = (source: (typeof DATA_SOURCES)[0]) => {
-    if (source.value !== "postgres" && source.value !== "mysql") {
+    if (source.value !== "postgresql" && source.value !== "mysql") {
       setComingSoonDb(source);
       setShowComingSoon(true);
       return;
@@ -313,7 +313,7 @@ export default function ConnectDatabase({
                     key={source.id}
                     onClick={() => handleDataSourceSelect(source)}
                     className={`flex items-center gap-3 p-4 text-left rounded-lg border transition-colors relative ${
-                      source.value === "postgres" || source.value === "mysql"
+                      source.value === "postgresql" || source.value === "mysql"
                         ? "border-gray-200 hover:border-blue-400 hover:bg-blue-50"
                         : "border-gray-100 bg-gray-50 cursor-not-allowed"
                     }`}
@@ -321,7 +321,7 @@ export default function ConnectDatabase({
                     <span className="text-2xl">{source.icon}</span>
                     <div className="flex flex-col">
                       <span className="text-sm font-medium">{source.name}</span>
-                      {source.value !== "postgres" &&
+                      {source.value !== "postgresql" &&
                         source.value !== "mysql" && (
                           <span className="text-[11px] text-gray-500">
                             Coming Soon

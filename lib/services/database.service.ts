@@ -192,7 +192,7 @@ class DatabaseServiceImpl implements DatabaseService {
     table_name: string
   ) {
     const TABLE_QUERY = {
-      postgresql: `SELECT column_name, data_type, character_maximum_length, is_nullable 
+      postgres: `SELECT column_name, data_type, character_maximum_length, is_nullable 
         FROM information_schema.columns 
         WHERE table_name = '${table_name}';`,
       mysql: `DESCRIBE ${table_name};`,

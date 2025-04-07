@@ -35,7 +35,15 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
-import { Play, Pause, MoreVertical, History, Edit, Trash2, Shield } from "lucide-react";
+import {
+  Play,
+  Pause,
+  MoreVertical,
+  History,
+  Edit,
+  Trash2,
+  Shield,
+} from "lucide-react";
 
 interface WarehouseData {
   status: string;
@@ -63,10 +71,14 @@ export default function SQLComputePage() {
   ]);
 
   const toggleWarehouseState = (index: number) => {
-    setWarehouses(prevWarehouses => 
-      prevWarehouses.map((warehouse, i) => 
-        i === index 
-          ? { ...warehouse, isRunning: !warehouse.isRunning, status: warehouse.isRunning ? "Stopped" : "Running" }
+    setWarehouses((prevWarehouses) =>
+      prevWarehouses.map((warehouse, i) =>
+        i === index
+          ? {
+              ...warehouse,
+              isRunning: !warehouse.isRunning,
+              status: warehouse.isRunning ? "Stopped" : "Running",
+            }
           : warehouse
       )
     );

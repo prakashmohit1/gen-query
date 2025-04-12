@@ -91,4 +91,15 @@ export async function loginWithGoogle() {
 export async function logout() {
   removeCookie("id_token");
   removeCookie("refresh_token");
+  clearAllCookies();
+}
+
+export function clearAllCookies() {
+  const cookies = document.cookie.split(";");
+
+  for (const cookie of cookies) {
+    const eqPos = cookie.indexOf("=");
+    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+  }
 }

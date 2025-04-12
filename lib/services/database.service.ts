@@ -61,7 +61,6 @@ class DatabaseServiceImpl implements DatabaseService {
       console.log(">>>> logout inside database service");
       logout();
       signOut();
-      authService.signout();
       console.log(">>>> signout", getServerSession());
       window.location.href = "/";
     }

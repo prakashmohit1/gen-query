@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { signOut } from "next-auth/react";
 import { DatabaseConnection } from "@/contexts/database-context";
 import { logout } from "../actions";
+import { authService } from "./auth";
 
 export interface CreateDatabaseConnection {
   name: string;
@@ -59,7 +60,8 @@ class DatabaseServiceImpl implements DatabaseService {
     if (response.status === 401) {
       console.log(">>>> logout inside database service");
       logout();
-      await signOut();
+      signOut();
+      authService.signout();
       console.log(">>>> signout", getServerSession());
       window.location.href = "/";
     }

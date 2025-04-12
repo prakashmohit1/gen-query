@@ -37,6 +37,7 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
   const cookieStore = await cookies();
   const idToken = cookieStore.get("id_token");
   const headers = new Headers(init?.headers);
+  headers.delete("content-length");
   const refreshToken = cookieStore.get("refresh_token")?.value ?? "";
 
   if (!refreshToken) {
@@ -59,7 +60,6 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
       });
     }
   }
-  console.log("fetchFromApi", `${API_BASE_URL}${path}`, path, init?.body);
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,

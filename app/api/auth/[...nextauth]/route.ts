@@ -3,7 +3,6 @@ import GoogleProvider from "next-auth/providers/google";
 import { JWT } from "next-auth/jwt";
 import { cookies } from "next/headers"; // ✅ Next.js cookie handler
 import { fetchFromApi } from "../../v1/common/service";
-import { signOut } from "next-auth/react";
 
 interface ExtendedToken extends JWT {
   refreshToken?: string;

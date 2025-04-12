@@ -56,6 +56,7 @@ class DatabaseServiceImpl implements DatabaseService {
       },
     });
     if (response.status === 401) {
+      console.log("logout inside database service");
       signOut();
     }
     if (!response.ok) {

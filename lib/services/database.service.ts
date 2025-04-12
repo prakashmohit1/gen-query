@@ -56,8 +56,7 @@ class DatabaseServiceImpl implements DatabaseService {
       },
     });
     if (response.status === 401) {
-      console.log("logout inside database service");
-      console.log("logout inside header");
+      console.log(">>>> logout inside database service");
       deleteCookie("id_token");
       deleteCookie("refresh_token");
       signOut();

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { signOut } from "next-auth/react";
 import { DatabaseConnection } from "@/contexts/database-context";
+import { logout } from "../actions";
 
 export interface CreateDatabaseConnection {
   name: string;
@@ -57,9 +58,9 @@ class DatabaseServiceImpl implements DatabaseService {
     });
     if (response.status === 401) {
       console.log(">>>> logout inside database service");
-      deleteCookie("id_token");
-      deleteCookie("refresh_token");
+      logout();
       signOut();
+      window.location.href = "/";
     }
     if (!response.ok) {
       throw new Error("Failed to fetch database connections");

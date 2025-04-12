@@ -35,7 +35,7 @@ class AuthServiceImpl {
 
   async signout(): Promise<Team> {
     const response = await fetch(`${this.baseUrl}/signout`, {
-      method: "GET",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },

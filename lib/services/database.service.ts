@@ -1,4 +1,4 @@
-import { getCookie } from "@/lib/utils";
+import { deleteCookie, getCookie } from "@/lib/utils";
 import { sqlQueriesService } from "./sql-queries";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
@@ -57,6 +57,9 @@ class DatabaseServiceImpl implements DatabaseService {
     });
     if (response.status === 401) {
       console.log("logout inside database service");
+      console.log("logout inside header");
+      deleteCookie("id_token");
+      deleteCookie("refresh_token");
       signOut();
     }
     if (!response.ok) {

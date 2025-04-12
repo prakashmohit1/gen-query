@@ -49,7 +49,7 @@ class DatabaseServiceImpl implements DatabaseService {
   private catalogBaseUrl = "/api/v1/catalog/databases";
 
   async getDatabaseConnections(): Promise<DatabaseConnection[]> {
-    console.log("getDatabaseConnections", this.baseUrl);
+    console.log(">>>> getDatabaseConnections", this.baseUrl);
     const response = await fetch(this.baseUrl, {
       headers: {
         "Content-Type": "application/json",
@@ -59,7 +59,8 @@ class DatabaseServiceImpl implements DatabaseService {
     if (response.status === 401) {
       console.log(">>>> logout inside database service");
       logout();
-      signOut();
+      await signOut();
+      console.log(">>>> signout");
       window.location.href = "/";
     }
     if (!response.ok) {

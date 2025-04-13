@@ -68,8 +68,8 @@ jobs:
           environment: "AzureCloud"
           allow-no-subscriptions: true
           audience: "https://management.azure.com/"
-          auth-type: "client_secret"
-          
+          auth-type: "IDENTITY"
+
       - name: "Deploy to Azure Web App"
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3

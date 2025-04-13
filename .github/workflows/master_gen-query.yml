@@ -60,9 +60,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: 84f0abfa-c8c3-4aa9-8588-9045cdf41228
-          tenant-id: 2e0bbf91-c550-46af-843c-2d48ae3ad9c2
-          subscription-id: 484de05b-e5c6-4fe5-b37c-f572e94daacc
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
           environment: "AzureCloud"
           allow-no-subscriptions: true

@@ -63,7 +63,7 @@ jobs:
           client-id: 84f0abfa-c8c3-4aa9-8588-9045cdf41228
           tenant-id: 2e0bbf91-c550-46af-843c-2d48ae3ad9c2
           subscription-id: 484de05b-e5c6-4fe5-b37c-f572e94daacc
-          client-secret: EmU8Q~ojTFWMePpyrN9QbfId4FrLuukWhtMCtbr3
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
           environment: "AzureCloud"
           allow-no-subscriptions: true
 

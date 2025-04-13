@@ -64,9 +64,7 @@ jobs:
           enable-AzPSSession: true
 
       - name: "Deploy to Azure Web App"
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: "gen-query"
-          slot-name: "Production"
           package: .

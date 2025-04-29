@@ -65,7 +65,7 @@ GenQuery is a revolutionary AI-powered data engine that transforms complex data 
 1. Clone the repository
    \`\`\`bash
    git clone https://github.com/prakashmohit1/gen-query.git
-   cd gen-query-ui
+   cd gen-query
    \`\`\`
 
 2. Install dependencies

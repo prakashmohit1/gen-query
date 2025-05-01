@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-const API_BASE_URL = "https://gen-query-ai.onrender.com/api/v1";
+const API_BASE_URL =
+  "https://gen-query-backend-bag7czgnecb2gub9.centralindia-01.azurewebsites.net/api/v1";
 
 interface RefreshedTokens {
   id_token: string;
@@ -61,10 +62,17 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
     }
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${path}/`, {
     ...init,
     headers,
   });
+
+  console.log(
+    "====> Response status:",
+    response.status,
+    `${API_BASE_URL}${path}`,
+    headers.get("Authorization")
+  );
 
   if (response.status === 401) {
     try {

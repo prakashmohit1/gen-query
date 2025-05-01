@@ -10,6 +10,22 @@ export async function POST() {
     console.log("Session:", session);
     const allCookies = cookies(); // get cookies from the request
 
+    const cookieOptions = {
+      path: "/",
+      expires: new Date(0),
+      secure: true,
+      httpOnly: true,
+      sameSite: "lax",
+    };
+
+    const cookiesToClear = [
+      "__Secure-next-auth.state",
+      "__Secure-next-auth.session-token",
+      "__Secure-next-auth.pkce.code_verifier",
+      "__Secure-next-auth.callback-url",
+      "__Host-next-auth.csrf-token",
+    ];
+
     if (session) {
       // Clear the session
       const response = new NextResponse(JSON.stringify({ success: true }), {
@@ -24,6 +40,10 @@ export async function POST() {
           expires: new Date(0),
           path: "/", // clear from root path
         });
+      });
+
+      cookiesToClear.forEach((name) => {
+        response.cookies.set(name, "", cookieOptions);
       });
 
       // Clear the session cookie
@@ -71,6 +91,10 @@ export async function POST() {
         expires: new Date(0),
         path: "/", // clear from root path
       });
+    });
+
+    cookiesToClear.forEach((name) => {
+      response.cookies.set(name, "", cookieOptions);
     });
     return response;
   } catch (error) {

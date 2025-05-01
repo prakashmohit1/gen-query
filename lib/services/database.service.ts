@@ -51,7 +51,6 @@ class DatabaseServiceImpl implements DatabaseService {
   private catalogBaseUrl = "/api/v1/catalog/databases";
 
   async getDatabaseConnections(): Promise<DatabaseConnection[]> {
-    console.log(">>>> getDatabaseConnections", this.baseUrl);
     const response = await fetch(this.baseUrl, {
       headers: {
         "Content-Type": "application/json",

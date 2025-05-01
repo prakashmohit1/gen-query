@@ -62,7 +62,7 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
     }
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}/`, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,
   });

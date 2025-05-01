@@ -8,10 +8,13 @@ export async function GET(
   try {
     const url = new URL(request.url);
     const searchParams = url.search;
-    const response = await fetchFromApi(`/saved-queries${searchParams || ""}`, {
-      method: "GET",
-      headers: request.headers,
-    });
+    const response = await fetchFromApi(
+      `/saved-queries/${searchParams || ""}`,
+      {
+        method: "GET",
+        headers: request.headers,
+      }
+    );
 
     // Handle 204 No Content response
     if (response.status === 204) {
@@ -62,7 +65,7 @@ export async function GET(
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const response = await fetchFromApi("/saved-queries", {
+    const response = await fetchFromApi("/saved-queries/", {
       method: "POST",
       headers: request.headers,
       body: JSON.stringify(body),

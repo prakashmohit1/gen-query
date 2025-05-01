@@ -3,7 +3,7 @@ import { fetchFromApi } from "../common/service";
 
 export async function GET(request: Request) {
   try {
-    const response = await fetchFromApi("/sql-queries", {
+    const response = await fetchFromApi("/sql-queries/", {
       method: "GET",
       headers: request.headers,
     });

@@ -4,7 +4,7 @@ import { fetchFromApi } from "../common/service";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const response = await fetchFromApi("/chat-conversations", {
+    const response = await fetchFromApi("/chat-conversations/", {
       method: "POST",
       body: JSON.stringify(body),
       headers: request.headers,
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const response = await fetchFromApi("/chat-conversations", {
+    const response = await fetchFromApi("/chat-conversations/", {
       method: "GET",
       headers: request.headers,
     });

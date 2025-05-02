@@ -34,7 +34,7 @@ export default async function RootLayout({
                 </main>
               </div>
             ) : (
-              <DatabaseProvider>{children}</DatabaseProvider>
+              children
             )}
           </AuthProvider>
         </SessionProvider>

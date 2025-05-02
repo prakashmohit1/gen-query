@@ -1,12 +1,8 @@
-import { deleteCookie, getCookie } from "@/lib/utils";
+import { getCookie } from "@/lib/utils";
 import { sqlQueriesService } from "./sql-queries";
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 import { signOut } from "next-auth/react";
 import { DatabaseConnection } from "@/contexts/database-context";
-import { clearAllCookies, logout } from "../actions";
-import { authService } from "./auth";
-import { log } from "console";
+import { logout } from "../actions";
 
 export interface CreateDatabaseConnection {
   name: string;
@@ -60,7 +56,7 @@ class DatabaseServiceImpl implements DatabaseService {
     if (response.status === 401) {
       console.log(">>>> logout inside database service");
       logout();
-      await signOut();
+      await signOut({ redirect: false });
       window.location.href = "/";
     }
     if (!response.ok) {

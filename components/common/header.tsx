@@ -24,11 +24,12 @@ const Header = ({
   setIsSideMenuCollapsed,
 }: any) => {
   const router = useRouter();
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log("logout inside header");
     deleteCookie("id_token");
     deleteCookie("refresh_token");
-    signOut();
+    await signOut({ redirect: false });
+    window.location.href = "/";
   };
   return (
     <>

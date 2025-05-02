@@ -16,6 +16,7 @@ export async function POST() {
       secure: true,
       httpOnly: true,
       sameSite: "lax",
+      domain: "gen-query.vercel.app", // match exactly what was set
     };
 
     const cookiesToClear = [
@@ -36,10 +37,7 @@ export async function POST() {
       });
 
       (await allCookies).getAll().forEach((cookie) => {
-        response.cookies.set(cookie.name, "", {
-          expires: new Date(0),
-          path: "/", // clear from root path
-        });
+        response.cookies.set(cookie.name, "", cookieOptions);
       });
 
       cookiesToClear.forEach((name) => {
@@ -68,15 +66,6 @@ export async function POST() {
         path: "/",
       });
 
-      response.cookies.set("__Secure-next-auth.session-token", "", {
-        path: "/",
-        expires: new Date(0),
-        secure: true,
-        httpOnly: true,
-        sameSite: "lax",
-        domain: "gen-query.vercel.app", // match exactly what was set
-      });
-
       return response;
     }
 
@@ -87,10 +76,7 @@ export async function POST() {
       },
     });
     (await allCookies).getAll().forEach((cookie) => {
-      response.cookies.set(cookie.name, "", {
-        expires: new Date(0),
-        path: "/", // clear from root path
-      });
+      response.cookies.set(cookie.name, "", cookieOptions);
     });
 
     cookiesToClear.forEach((name) => {

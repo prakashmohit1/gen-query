@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 
 export default async function Home() {
   const session = await getServerSession();
-  console.info(">>>> session", session);
+  console.warn(">>>> session", session);
   const pathname = (await headers()).get("x-invoke-path") || "";
 
   // Skip session check for accept-invite routes
@@ -16,5 +16,5 @@ export default async function Home() {
   if (!session) {
     return <LoginPage />;
   }
-  return redirect("/");
+  return redirect("/db-editor");
 }

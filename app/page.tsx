@@ -1,11 +1,12 @@
 import LoginPage from "./login/page";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export default async function Home() {
   const session = await getServerSession();
   console.warn(">>>> session", session);
+  const cookieStore = cookies();
   const pathname = (await headers()).get("x-invoke-path") || "";
 
   // Skip session check for accept-invite routes
@@ -13,7 +14,7 @@ export default async function Home() {
     return null;
   }
 
-  if (!session) {
+  if (!session || !(await cookieStore).get("id_token")) {
     return <LoginPage />;
   }
   return redirect("/db-editor");

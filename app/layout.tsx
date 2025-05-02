@@ -8,6 +8,7 @@ import { SessionProvider } from "@/contexts/session-context";
 import { authOptions } from "./api/auth/[...nextauth]/route";
 import { Toaster } from "@/components/ui/toaster";
 import { cookies } from "next/headers";
+import { DatabaseProvider } from "@/contexts/database-context";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,7 +34,7 @@ export default async function RootLayout({
                 </main>
               </div>
             ) : (
-              children
+              <DatabaseProvider>{children}</DatabaseProvider>
             )}
           </AuthProvider>
         </SessionProvider>

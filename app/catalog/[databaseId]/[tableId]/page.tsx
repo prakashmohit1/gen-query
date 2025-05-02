@@ -87,7 +87,7 @@ export default function TablePage() {
         const columnsData = await catalogService.getColumns(
           params.tableId as string
         );
-        console.log("columnsData", columnsData);
+
         if (Array.isArray(columnsData?.columns))
           setColumns(columnsData.columns || []);
 

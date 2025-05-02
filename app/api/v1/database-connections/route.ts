@@ -8,8 +8,6 @@ export async function GET(request: Request) {
       headers: request.headers,
     });
 
-    console.log("Response from API:", response.status);
-
     // Handle 204 No Content response
     if (response.status === 204) {
       return new NextResponse(null, { status: 204 });

@@ -124,8 +124,6 @@ export async function DELETE(
       headers: request.headers,
     });
 
-    console.log("response", response);
-
     // Handle 204 No Content response
     if (response instanceof Response && response.status === 204) {
       return new NextResponse(null, { status: 204 });

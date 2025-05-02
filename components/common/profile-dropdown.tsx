@@ -9,7 +9,6 @@ const ProfileDropdown = ({ session }: any) => {
   const router = useRouter();
 
   const handleLogout = async () => {
-    console.log("logout inside profile");
     logout();
     await signOut({ redirect: false });
     window.location.href = "/";

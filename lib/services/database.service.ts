@@ -54,7 +54,6 @@ class DatabaseServiceImpl implements DatabaseService {
       },
     });
     if (response.status === 401) {
-      console.log(">>>> logout inside database service");
       logout();
       await signOut({ redirect: false });
       window.location.href = "/";

@@ -178,11 +178,9 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch connections
   const fetchConnections = async () => {
-    console.log("fetchConnections");
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const connections = await databaseService.getDatabaseConnections();
-      console.log("connections", connections);
 
       // Map the response to match our interface
       const mappedConnections = connections.map((conn: DatabaseConnection) => {
@@ -255,8 +253,6 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
         .flatMap((conn) => conn.catalog_databases || [])
         .find((db) => db.id === state.selectedDatabaseId) || null
     : null;
-
-  console.log("selectedDatabase", selectedDatabase);
 
   // Context value
   const value: DatabaseContextType = {

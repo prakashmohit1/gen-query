@@ -7,7 +7,6 @@ export async function POST() {
     // Get the current session
     const session = await getServerSession();
 
-    console.log("Session:", session);
     const allCookies = cookies(); // get cookies from the request
 
     const cookieOptions = {

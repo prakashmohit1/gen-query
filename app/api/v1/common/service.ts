@@ -67,13 +67,6 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
     headers,
   });
 
-  console.log(
-    "====> Response status:",
-    response.status,
-    `${API_BASE_URL}${path}`,
-    headers.get("Authorization")
-  );
-
   if (response.status === 401) {
     try {
       const refreshedTokens = await refreshIdToken(

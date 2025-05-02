@@ -132,7 +132,6 @@ export default function CatalogPage() {
     setLoading(true);
     try {
       const res = await catalogService.getTables(params.databaseId as string);
-      console.log("tables", res, selectedConnection);
       if (Array.isArray(res?.tables)) setTables(res.tables);
     } catch (error) {
       console.error("Error fetching tables:", error);
@@ -170,8 +169,8 @@ export default function CatalogPage() {
   const handleAddTag = async () => {
     try {
       await catalogService.createTag(params.databaseId as string, {
-          key: newTag.key,
-          value: newTag.value,
+        key: newTag.key,
+        value: newTag.value,
       });
 
       setTags([...tags, newTag]);
@@ -226,7 +225,7 @@ export default function CatalogPage() {
         ?.catalog_databases?.find((db) => db.id === params.databaseId)?.name ||
       "Database";
 
-        return (
+    return (
       <div className="flex-1 h-full flex flex-col">
         <div className="border-b p-4 flex flex justify-between gap-4">
           <Breadcrumbs
@@ -328,16 +327,16 @@ export default function CatalogPage() {
                             </span>
                           </div>
                         )}
-                  </div>
-                  </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))
             )}
           </div>
         </ScrollArea>
-          </div>
-        );
+      </div>
+    );
   };
 
   const renderDatabaseDetails = () => {
@@ -348,37 +347,37 @@ export default function CatalogPage() {
         </div>
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-6">
-          {/* Database Description */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
+            {/* Database Description */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
                 <h2 className="text-sm font-semibold">Description</h2>
-              <Button
-                variant="ghost"
-                size="icon"
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="h-6 w-6"
-                onClick={() => setIsEditingDescription(true)}
-              >
+                  onClick={() => setIsEditingDescription(true)}
+                >
                   <Pencil className="h-3 w-3" />
-              </Button>
-            </div>
+                </Button>
+              </div>
               <p className="text-xs text-gray-600">
-              {description || "No description"}
-            </p>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold">Tags</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                  className="h-6 w-6"
-                onClick={() => setIsAddingTag(true)}
-              >
-                  <Plus className="h-3 w-3" />
-              </Button>
+                {description || "No description"}
+              </p>
             </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold">Tags</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setIsAddingTag(true)}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
               <div className="flex flex-wrap gap-1">
                 {tags.length === 0 ? (
                   <p className="text-xs text-gray-500">No tags added yet</p>
@@ -449,8 +448,8 @@ export default function CatalogPage() {
                   </p>
                 </div>
               </div>
-              </div>
-        </div>
+            </div>
+          </div>
         </ScrollArea>
       </div>
     );

@@ -579,13 +579,6 @@ export function SQLEditor({
   // Save query function
   const saveQuery = useCallback(
     async (queryText: string) => {
-      console.log(
-        "aaaa",
-        selectedDatabase,
-        activeQueryId,
-        queryText,
-        lastSavedText
-      );
       if (!selectedDatabase || !activeQueryId || queryText === lastSavedText)
         return;
 

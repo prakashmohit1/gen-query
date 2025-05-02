@@ -183,7 +183,6 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
   };
 
   useEffect(() => {
-    console.log("databases", databases?.[0]?.catalog_databases?.[0]?.tables);
     const activeConnections = databases.filter(
       (connection) => connection.is_active
     );

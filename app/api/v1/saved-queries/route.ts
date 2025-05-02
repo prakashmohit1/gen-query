@@ -84,7 +84,6 @@ export async function POST(request: Request) {
     // Try to parse JSON for all other responses
     try {
       const data = await response.json();
-      console.log("data", data);
       if (!response.ok) {
         return NextResponse.json(
           { error: data.detail || "An error occurred" },

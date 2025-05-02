@@ -44,28 +44,6 @@ export async function POST() {
         response.cookies.set(name, "", cookieOptions);
       });
 
-      // Clear the session cookie
-      response.cookies.set("next-auth.session-token", "", {
-        expires: new Date(0),
-        path: "/",
-      });
-
-      // Clear the CSRF token cookie if it exists
-      response.cookies.set("next-auth.csrf-token", "", {
-        expires: new Date(0),
-        path: "/",
-      });
-
-      response.cookies.set("next-auth.callback-url", "", {
-        expires: new Date(0),
-        path: "/",
-      });
-
-      response.cookies.set("__next_hmr_refresh_hash__", "", {
-        expires: new Date(0),
-        path: "/",
-      });
-
       return response;
     }
 

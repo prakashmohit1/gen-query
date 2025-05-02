@@ -94,64 +94,72 @@ export default function QueryHistoryPage() {
   };
 
   const handleExportCSV = () => {
-    const headers = [
-      "Query",
-      "Started at",
-      "Duration",
-      "Source",
-      "Database",
-      "Status",
-    ];
+    try {
+      const headers = [
+        "Query",
+        "Started at",
+        "Duration",
+        "Source",
+        "Database",
+        "Status",
+      ];
 
-    const csvData = queries.map((query) => [
-      query.executed_query.replace(/"/g, '""'), // Escape quotes in query text
-      format(new Date(query.created_at), "MMM d, yyyy HH:mm:ss"),
-      `${query.execution_time_ms} ms`,
-      query.source || "Direct Query",
-      databases.find((db) => db.id === query.connection_id)?.name || "",
-      query.execution_status ? "Success" : "Failed",
-    ]);
+      const csvData = queries.map((query) => [
+        query.executed_query.replace(/"/g, '""'), // Escape quotes in query text
+        format(new Date(query.created_at), "MMM d, yyyy HH:mm:ss"),
+        `${query.execution_time_ms} ms`,
+        query.source || "Direct Query",
+        databases.find((db) => db.id === query.connection_id)?.name || "",
+        query.execution_status ? "Success" : "Failed",
+      ]);
 
-    const csvContent = [
-      headers.join(","),
-      ...csvData.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-    ].join("\n");
+      const csvContent = [
+        headers.join(","),
+        ...csvData.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+      ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute(
-      "download",
-      `query_history_${format(new Date(), "yyyy-MM-dd")}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute(
+        "download",
+        `query_history_${format(new Date(), "yyyy-MM-dd")}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Failed to export CSV:", error);
+    }
   };
 
   const handleExportJSON = () => {
-    const jsonData = queries.map((query) => ({
-      query: query.executed_query,
-      started_at: query.created_at,
-      duration: `${query.execution_time_ms} ms`,
-      source: query.source || "Direct Query",
-      database:
-        databases.find((db) => db.id === query.connection_id)?.name || "",
-      status: query.execution_status ? "Success" : "Failed",
-    }));
+    try {
+      const jsonData = queries.map((query) => ({
+        query: query.executed_query,
+        started_at: query.created_at,
+        duration: `${query.execution_time_ms} ms`,
+        source: query.source || "Direct Query",
+        database:
+          databases.find((db) => db.id === query.connection_id)?.name || "",
+        status: query.execution_status ? "Success" : "Failed",
+      }));
 
-    const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
-      type: "application/json",
-    });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute(
-      "download",
-      `query_history_${format(new Date(), "yyyy-MM-dd")}.json`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
+        type: "application/json",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute(
+        "download",
+        `query_history_${format(new Date(), "yyyy-MM-dd")}.json`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Failed to export JSON:", error);
+    }
   };
 
   return (

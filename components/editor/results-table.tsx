@@ -175,31 +175,37 @@ export function ResultsTable({
   };
 
   const downloadCSV = () => {
-    // Create CSV content
-    const csvContent = [
-      // Headers
-      columns.map((col: Column) => `"${col.name}"`).join(","),
-      // Rows
-      ...rows.map((row: any[]) =>
-        row
-          .map(
-            (cell: any) => `"${cell?.toString().replace(/"/g, '""') ?? "NULL"}"`
-          )
-          .join(",")
-      ),
-    ].join("\n");
+    try {
+      if (!document) return;
+      // Create CSV content
+      const csvContent = [
+        // Headers
+        columns.map((col: Column) => `"${col.name}"`).join(","),
+        // Rows
+        ...rows.map((row: any[]) =>
+          row
+            .map(
+              (cell: any) =>
+                `"${cell?.toString().replace(/"/g, '""') ?? "NULL"}"`
+            )
+            .join(",")
+        ),
+      ].join("\n");
 
-    // Create and trigger download
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute(
-      "download",
-      `query_results_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Create and trigger download
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute(
+        "download",
+        `query_results_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading CSV:", error);
+    }
   };
 
   const renderChart = () => {
@@ -520,25 +526,29 @@ export function ResultsTable({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const chartElement = document.querySelector(
-                      ".recharts-wrapper svg"
-                    );
-                    if (chartElement) {
-                      const svgData = new XMLSerializer().serializeToString(
-                        chartElement
+                    try {
+                      const chartElement = document.querySelector(
+                        ".recharts-wrapper svg"
                       );
-                      const svgBlob = new Blob([svgData], {
-                        type: "image/svg+xml;charset=utf-8",
-                      });
-                      const link = document.createElement("a");
-                      link.href = URL.createObjectURL(svgBlob);
-                      link.download = `chart_${format(
-                        new Date(),
-                        "yyyyMMdd_HHmmss"
-                      )}.svg`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
+                      if (chartElement) {
+                        const svgData = new XMLSerializer().serializeToString(
+                          chartElement
+                        );
+                        const svgBlob = new Blob([svgData], {
+                          type: "image/svg+xml;charset=utf-8",
+                        });
+                        const link = document.createElement("a");
+                        link.href = URL.createObjectURL(svgBlob);
+                        link.download = `chart_${format(
+                          new Date(),
+                          "yyyyMMdd_HHmmss"
+                        )}.svg`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }
+                    } catch (error) {
+                      console.error("Error downloading chart:", error);
                     }
                   }}
                 >

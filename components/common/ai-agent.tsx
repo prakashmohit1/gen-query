@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import {
-  useDatabase,
   useDatabaseList,
   useSelectedDatabase,
 } from "@/contexts/database-context";

@@ -74,7 +74,7 @@ export async function POST() {
         secure: true,
         httpOnly: true,
         sameSite: "lax",
-        domain: "yourdomain.com", // match exactly what was set
+        domain: "gen-query.vercel.app", // match exactly what was set
       });
 
       return response;

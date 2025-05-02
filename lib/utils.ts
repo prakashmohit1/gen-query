@@ -23,11 +23,13 @@ export const setCookie = (
   }
 
   expires = `; expires=${date.toUTCString()}`;
-  document.cookie = `${name}=${value || ""}${expires}; path=${path || "/"}`;
+  if (document)
+    document.cookie = `${name}=${value || ""}${expires}; path=${path || "/"}`;
 };
 
 // please use cookies according to cookie policy - (Legal)
 export function getCookie(name: string): string {
+  if (!document) return "";
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop()?.split(";").shift() || "";
@@ -36,6 +38,7 @@ export function getCookie(name: string): string {
 
 // delete the cookie
 export const deleteCookie = (name: string) => {
+  if (!document) return;
   document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
 };
 
@@ -63,6 +66,7 @@ export function decodeJwt(token: string): DecodedToken | null {
 }
 
 export const clearAllCookies = () => {
+  if (!document) return;
   document.cookie.split("; ").forEach((cookie) => {
     const name = cookie.split("=")[0].trim();
     document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;

@@ -1,4 +1,4 @@
-import { clearAllCookies, getCookie } from "@/lib/utils";
+import { getCookie } from "@/lib/utils";
 
 interface ApiResponse<T> {
   data: T;
@@ -18,7 +18,6 @@ class ApiService {
 
       if (status === 401) {
         console.error("Unauthorized access - token might be expired");
-        clearAllCookies();
         return {
           data: {} as T,
           error: "Unauthorized access. Please login again.",
@@ -27,7 +26,6 @@ class ApiService {
       }
 
       if (!response.ok) {
-        clearAllCookies();
         return {
           data: {} as T,
           error: data.error || "An error occurred",
@@ -37,7 +35,6 @@ class ApiService {
 
       return { data, status };
     } catch (error) {
-      clearAllCookies();
       return {
         data: {} as T,
         error: "Failed to parse response",

@@ -29,38 +29,47 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { QueryPerformance } from "./query-performance-popup";
-import dynamic from "next/dynamic";
+
 import { ChartRenderer } from "./chart-renderer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Remove tab-related dynamic imports and keep only necessary ones
-const Select = dynamic(
-  () => import("@/components/ui/select").then((mod) => mod.Select),
-  { ssr: false }
-);
-const SelectContent = dynamic(
-  () => import("@/components/ui/select").then((mod) => mod.SelectContent),
-  { ssr: false }
-);
-const SelectItem = dynamic(
-  () => import("@/components/ui/select").then((mod) => mod.SelectItem),
-  { ssr: false }
-);
-const SelectTrigger = dynamic(
-  () => import("@/components/ui/select").then((mod) => mod.SelectTrigger),
-  { ssr: false }
-);
-const SelectValue = dynamic(
-  () => import("@/components/ui/select").then((mod) => mod.SelectValue),
-  { ssr: false }
-);
-const Checkbox = dynamic(
-  () => import("@/components/ui/checkbox").then((mod) => mod.Checkbox),
-  { ssr: false }
-);
-const Label = dynamic(
-  () => import("@/components/ui/label").then((mod) => mod.Label),
-  { ssr: false }
-);
+// const Select = dynamic(
+//   () => import("@/components/ui/select").then((mod) => mod.Select),
+//   { ssr: false }
+// );
+// const SelectContent = dynamic(
+//   () => import("@/components/ui/select").then((mod) => mod.SelectContent),
+//   { ssr: false }
+// );
+// const SelectItem = dynamic(
+//   () => import("@/components/ui/select").then((mod) => mod.SelectItem),
+//   { ssr: false }
+// );
+// const SelectTrigger = dynamic(
+//   () => import("@/components/ui/select").then((mod) => mod.SelectTrigger),
+//   { ssr: false }
+// );
+// const SelectValue = dynamic(
+//   () => import("@/components/ui/select").then((mod) => mod.SelectValue),
+//   { ssr: false }
+// );
+// const Checkbox = dynamic(
+//   () => import("@/components/ui/checkbox").then((mod) => mod.Checkbox),
+//   { ssr: false }
+// );
+// const Label = dynamic(
+//   () => import("@/components/ui/label").then((mod) => mod.Label),
+//   { ssr: false }
+// );
 
 interface Column {
   name: string;
@@ -244,7 +253,7 @@ export function ResultsTable({
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col pb-[70px]">
       <div className="flex items-center justify-between p-4 border-b">
         <div className="text-sm font-medium text-blue-900">Query Results</div>
         <div className="flex items-center gap-2">

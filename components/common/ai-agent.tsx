@@ -98,7 +98,7 @@ const DeleteConfirmationDialog = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/30" onClick={onClose}></div>
-      <div className="relative bg-white rounded-lg shadow-lg p-6 max-w-sm w-full mx-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
+      <div className="relative bg-white rounded-lg p-6 max-w-sm w-full mx-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-red-100 rounded-full">
             <AlertTriangle className="w-5 h-5 text-red-600" />

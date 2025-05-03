@@ -88,7 +88,7 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
             <Menu className="h-5 w-5" />
           </Button>
         </DrawerTrigger>
-        <DrawerContent side="left" className="p-0 w-[200px]">
+        <DrawerContent side="left" className="p-0 w-[180px]">
           <DrawerHeader className="border-b px-4 py-4">
             <DrawerTitle>Menu</DrawerTitle>
           </DrawerHeader>
@@ -104,7 +104,7 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      className={`flex items-center w-full px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
                         pathname === item.href
                           ? "bg-blue-50 text-blue-900"
                           : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
@@ -156,7 +156,7 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`flex items-center w-full px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
                       pathname === item.href
                         ? "bg-blue-50 text-blue-900"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"

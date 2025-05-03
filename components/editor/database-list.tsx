@@ -59,17 +59,17 @@ const DeleteConfirmationDialog = ({
         <p className="text-gray-600 mb-2">
           Are you sure you want to delete this query?
         </p>
-        <p className="text-sm text-gray-500 mb-6 break-all">"{queryName}"</p>
+        <p className="text-xs text-gray-500 mb-6 break-all">"{queryName}"</p>
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+            className="px-4 py-2 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
           >
             Delete
           </button>
@@ -198,7 +198,7 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
   }, [connectionId, selectConnection]);
 
   return (
-    <div className="h-full border-r bg-white w-[280px]">
+    <div className="h-full border-r bg-white w-[200px]">
       {/* Header with search and refresh */}
       <div className="p-4 border-b">
         <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
               placeholder="Search databases..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
+              className="pl-8 h-8 text-[10px] md:text-[10px]"
             />
           </div>
           <Button
@@ -230,12 +230,12 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center pt-8">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <div className="text-sm text-gray-500 pt-4">
+              <div className="text-xs text-gray-500 pt-4">
                 Loading Databases...
               </div>
             </div>
           ) : filteredDatabases.length === 0 ? (
-            <div className="text-center py-4 text-sm text-gray-500">
+            <div className="text-center py-4 text-xs text-gray-500">
               No databases found
             </div>
           ) : (
@@ -243,7 +243,7 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
               {filteredDatabases.map((db) => (
                 <div key={db.id} className="space-y-1">
                   <button
-                    className={`flex flex-col w-full px-3 py-2 text-sm rounded-lg transition-colors ${
+                    className={`flex flex-col w-full px-3 py-2 text-xs rounded-lg transition-colors ${
                       selectedConnection?.id === db.id
                         ? "bg-blue-50 text-blue-900"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
@@ -271,12 +271,12 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
                   <div className="ml-8 space-y-1">
                     {expandedConnections.includes(db.id) &&
                       (db.loadingTable ? (
-                        <div className="flex items-center gap-2 px-2 py-1 text-sm text-gray-500">
+                        <div className="flex items-center gap-2 px-2 py-1 text-xs text-gray-500">
                           <Loader2 className="w-4 h-4 animate-spin" />
                           <span>Loading tables...</span>
                         </div>
                       ) : db.tables?.length === 0 ? (
-                        <div className="px-2 py-1 text-sm text-gray-500">
+                        <div className="px-2 py-1 text-xs text-gray-500">
                           No tables found
                         </div>
                       ) : (
@@ -293,7 +293,7 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
                                     : [...prev, table.name]
                                 );
                               }}
-                              className="flex items-center gap-2 px-2 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer"
+                              className="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer"
                             >
                               <Table2 className="w-4 h-4" />
                               <span className="flex-1">{table.name}</span>

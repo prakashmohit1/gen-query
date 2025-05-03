@@ -45,7 +45,7 @@ const Layout = memo(function Layout({ children, session }: LayoutProps) {
           <SideMenu isCollapsed={isSideMenuCollapsed} />
           <div
             className={cn(
-              "w-full flex-1 bg-white rounded mt-[calc(64px)]",
+              "w-full flex-1 bg-white rounded mt-[calc(64px)] border border-gray-300 rounded",
 
               "transition-all duration-300"
             )}

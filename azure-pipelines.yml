@@ -24,6 +24,9 @@ stages:
 
           - script: |
               rm -rf .next node_modules
+            displayName: "Restore Dependencies"
+
+          - script: |
               npm ci
             displayName: "Install Dependencies"
 

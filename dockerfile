@@ -2,7 +2,8 @@ FROM node:20
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN rm -rf .next node_modules
+RUN npm ci
 
 COPY . .
 

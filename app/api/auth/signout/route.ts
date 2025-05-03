@@ -15,7 +15,7 @@ export async function POST() {
       secure: true,
       httpOnly: true,
       sameSite: "lax",
-      domain: "gen-query-bsdtbxb8a9eyfbgb.centralindia-01.azurewebsites.net", // match exactly what was set
+      domain: process.env.NEXTAUTH_DOMAIN, // match exactly what was set
     };
 
     const cookiesToClear = [

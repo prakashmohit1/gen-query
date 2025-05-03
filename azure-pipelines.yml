@@ -23,7 +23,8 @@ stages:
             displayName: "Install Node.js"
 
           - script: |
-              npm install
+              rm -rf .next node_modules
+              npm ci
             displayName: "Install Dependencies"
 
           - script: |
@@ -113,7 +114,7 @@ stages:
             displayName: "Install Node.js"
 
           - script: |
-              npm install
+              npm ci
               npm run test:e2e
             displayName: "Run E2E Tests"
 

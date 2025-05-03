@@ -25,7 +25,11 @@ async function refreshIdToken(refreshToken: string): Promise<RefreshedTokens> {
     body: params,
   });
 
+  console.log("Response from refreshIdToken:", response);
+
   const refreshedTokens = await response.json();
+
+  console.log("Response from refreshedTokens:", refreshedTokens);
   if (!response.ok) {
     throw refreshedTokens;
   }

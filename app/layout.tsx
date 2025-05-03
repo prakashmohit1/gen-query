@@ -28,7 +28,6 @@ export default async function RootLayout({
           <AuthProvider session={session}>
             {session && (await cookieStore).get("id_token") ? (
               <div className="flex min-h-screen flex-col bg-white">
-                <h1>Test</h1>
                 <main className="flex-1 flex">
                   <Layout session={session} children={children} />
                 </main>

@@ -58,9 +58,15 @@ export default function EditorPage() {
   return (
     <div className="h-screen bg-white">
       <ResizablePanelGroup direction="horizontal">
-        <DatabaseList />
+        <ResizablePanel defaultSize={20} className="my-0" minSize={4}>
+          <ResizableHandle className="absolute right-0 h-full bg-transparent" />
+          <DatabaseList />
+        </ResizablePanel>
 
-        <ResizablePanel defaultSize={80}>
+        <ResizablePanel
+          defaultSize={80}
+          className="border border-gray-300 rounded mx-[2px] my-0"
+        >
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={40}>
               <SQLEditor

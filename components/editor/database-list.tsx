@@ -198,9 +198,9 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
   }, [connectionId, selectConnection]);
 
   return (
-    <div className="h-full border-r bg-white w-[200px]">
+    <div className="h-full bg-white">
       {/* Header with search and refresh */}
-      <div className="p-4 border-b">
+      <div className="p-2 border-b">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
@@ -295,7 +295,7 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
                               }}
                               className="flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer"
                             >
-                              <Table2 className="w-4 h-4" />
+                              {/* <Table2 className="w-4 h-4" /> */}
                               <span className="flex-1">{table.name}</span>
                               <ChevronRight
                                 className={cn(

@@ -125,7 +125,7 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
       {/* Desktop Menu */}
       <div
         className={cn(
-          "hidden md:flex flex-col border-r bg-white transition-all duration-300",
+          "hidden md:flex flex-col bg-white transition-all duration-300",
           isCollapsed ? "w-[70px]" : "w-[200px]"
         )}
       >

@@ -9,7 +9,15 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Menu, Database, Code, History, Blocks, FileText } from "lucide-react";
+import {
+  Menu,
+  Database,
+  Code,
+  History,
+  Blocks,
+  FileText,
+  Home,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -18,6 +26,11 @@ const menuItems = [
   {
     category: "",
     items: [
+      {
+        title: "home",
+        href: "/home",
+        icon: Home,
+      },
       {
         title: "Catalog",
         href: "/catalog",

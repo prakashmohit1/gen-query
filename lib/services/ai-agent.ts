@@ -7,6 +7,7 @@ export interface AiAgentResponse {
   messages: Message[];
   sql?: string;
   error?: string;
+  panelSize?: number;
 }
 
 export interface ChatOptions {
@@ -14,6 +15,11 @@ export interface ChatOptions {
   limit: number;
   table_name?: string;
   columns?: string[];
+  panelConfig?: {
+    defaultSize: number;
+    minSize: number;
+    maxSize: number;
+  };
 }
 
 export interface ChatRequest {
@@ -27,10 +33,16 @@ export interface ChatConversation {
   messages: Message[];
   created_at: string;
   updated_at: string;
+  panelSize?: number;
 }
 
 export class AiAgentService {
   private baseUrl: string;
+  private defaultPanelConfig = {
+    defaultSize: 30,
+    minSize: 20,
+    maxSize: 50,
+  };
 
   constructor() {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -71,20 +83,29 @@ export class AiAgentService {
     request: ChatRequest,
     conversationId?: string
   ): Promise<AiAgentResponse> {
+    // Add panel configuration to the request if not present
+    const requestWithPanel = {
+      ...request,
+      options: {
+        ...request.options,
+        panelConfig: request.options.panelConfig || this.defaultPanelConfig,
+      },
+    };
+
     if (conversationId) {
       // If conversationId exists, use PUT to update existing conversation
       return this.makeRequest<AiAgentResponse>(
         `/api/v1/chat-conversations/${conversationId}/messages`,
         {
           method: "POST",
-          body: JSON.stringify(request),
+          body: JSON.stringify(requestWithPanel),
         }
       );
     } else {
       // If no conversationId, use POST to create new conversation
       return this.makeRequest<AiAgentResponse>("/api/v1/chat-conversations", {
         method: "POST",
-        body: JSON.stringify(request),
+        body: JSON.stringify(requestWithPanel),
       });
     }
   }
@@ -106,27 +127,34 @@ export class AiAgentService {
 
   async updateConversation(
     conversationId: string,
-    messages: Message[]
+    messages: Message[],
+    panelSize?: number
   ): Promise<ChatConversation> {
     return this.makeRequest<ChatConversation>(
       `/api/v1/chat-conversations/${conversationId}/messages`,
       {
         method: "POST",
-        body: JSON.stringify({ messages }),
+        body: JSON.stringify({ messages, panelSize }),
       }
     );
   }
 
   async createConversation(
-    databaseConnectionId?: string
+    databaseConnectionId?: string,
+    panelConfig = this.defaultPanelConfig
   ): Promise<ChatConversation> {
     return this.makeRequest<ChatConversation>("/api/v1/chat-conversations", {
       method: "PUT",
       body: JSON.stringify({
         database_server_connection_id: databaseConnectionId,
         messages: [],
+        panelConfig,
       }),
     });
+  }
+
+  getPanelConfig() {
+    return this.defaultPanelConfig;
   }
 }
 

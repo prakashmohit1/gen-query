@@ -2,6 +2,7 @@ import LoginPage from "./login/page";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
+import Router from "./enums/router";
 
 export default async function Home() {
   const session = await getServerSession();
@@ -17,5 +18,5 @@ export default async function Home() {
   if (!session || !(await cookieStore).get("id_token")) {
     return <LoginPage />;
   }
-  return redirect("/db-editor");
+  return redirect(Router.HOME);
 }

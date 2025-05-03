@@ -1,3 +1,4 @@
+import { signOut } from "next-auth/react";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -46,6 +47,7 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
   const refreshToken = cookieStore.get("refresh_token")?.value ?? "";
 
   if (!refreshToken) {
+    signOut();
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -98,6 +100,7 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
       return data;
     } catch (error) {
       console.error("Error refreshing access token", error);
+      signOut();
       return { error: "RefreshAccessTokenError" };
     }
   }

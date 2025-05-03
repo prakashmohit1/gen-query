@@ -15,7 +15,7 @@ export async function POST() {
       secure: true,
       httpOnly: true,
       sameSite: "lax",
-      domain: "gen-query.vercel.app", // match exactly what was set
+      domain: "gen-query-bsdtbxb8a9eyfbgb.centralindia-01.azurewebsites.net", // match exactly what was set
     };
 
     const cookiesToClear = [

@@ -20,9 +20,6 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
-    allowedDevOrigins: [
-      "https://gen-query-bsdtbxb8a9eyfbgb.centralindia-01.azurewebsites.net",
-    ],
   },
 };
 

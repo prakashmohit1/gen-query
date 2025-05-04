@@ -68,6 +68,7 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
     }
   }
 
+  console.warn("====> `${API_BASE_URL}${path}`:", `${API_BASE_URL}${path}`);
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,

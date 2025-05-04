@@ -75,7 +75,8 @@ export async function fetchFromApi(path: string, init?: RequestInit) {
   console.warn(
     "====> `${API_BASE_URL}${path}`:",
     `${API_BASE_URL}${path}`,
-    response.status
+    response.status,
+    headers
   );
 
   if (response.status === 401) {

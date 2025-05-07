@@ -27,7 +27,7 @@ const menuItems = [
     category: "",
     items: [
       {
-        title: "home",
+        title: "Home",
         href: "/home",
         icon: Home,
       },

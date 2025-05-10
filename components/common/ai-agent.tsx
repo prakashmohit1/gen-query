@@ -445,7 +445,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
 
   return (
     <div
-      className={`relative top-[65px] right-0 h-[calc(100vh-65px)] bg-white transition-all duration-300 ease-in-out z-50 overflow-hidden ${
+      className={`relative top-[70px] right-0 h-[calc(100vh-65px)] bg-white transition-all duration-300 ease-in-out z-50 overflow-hidden ${
         isOpen ? "w-80" : "w-0"
       }`}
     >

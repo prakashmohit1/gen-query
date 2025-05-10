@@ -32,7 +32,7 @@ const Header = ({
   };
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-100 via-blue-50 to-white border-b border-blue-200 shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-[51] bg-gradient-to-r from-blue-100 via-blue-50 to-white border-b border-blue-200 shadow-sm">
         <div className="mx-auto px-4">
           <div className="flex items-center h-16">
             {/* Logo and Brand */}

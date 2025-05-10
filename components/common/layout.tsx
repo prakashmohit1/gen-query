@@ -11,6 +11,11 @@ import { cn } from "@/lib/utils";
 import { DatabaseProvider } from "@/contexts/database-context";
 import { usePathname } from "next/navigation";
 import Router from "@/app/enums/router";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "../ui/resizable";
 
 interface LayoutProps {
   children: ReactNode;
@@ -45,7 +50,11 @@ const Layout = memo(function Layout({ children, session }: LayoutProps) {
           <SideMenu isCollapsed={isSideMenuCollapsed} />
           <div
             className={cn(
-              "w-full flex-1 bg-white rounded mt-[calc(64px)] border border-gray-300 rounded",
+              `${
+                isAIAgentOpen
+                  ? "w-[calc(100%-20rem-200px)]"
+                  : "w-[calc(100%-200px)]"
+              } bg-white rounded mt-[calc(70px)] border border-gray-300 rounded`,
 
               "transition-all duration-300"
             )}

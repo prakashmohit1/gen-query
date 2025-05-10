@@ -7,7 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
-import CodeMirror from "@uiw/react-codemirror";
+import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { sql } from "@codemirror/lang-sql";
 import { vscodeLight } from "@uiw/codemirror-theme-vscode";
 import { Button } from "@/components/ui/button";
@@ -818,6 +818,7 @@ export function SQLEditor({
               extensions={[
                 sql(),
                 autocompletion({ override: [customSQLCompletion] }),
+                EditorView.lineWrapping,
               ]}
               onChange={handleQueryChange}
               basicSetup={{

@@ -16,6 +16,10 @@ import {
   Trash2,
   PlusIcon,
   AlertTriangle,
+  Settings,
+  Share2,
+  Activity,
+  MoreVertical,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -83,6 +87,11 @@ interface DropdownItem {
 interface SelectedItems {
   tableName: string;
   columns: string[];
+}
+
+interface SidePanel {
+  isOpen: boolean;
+  type: "history" | "configure" | "monitoring" | "share" | "menu" | null;
 }
 
 const DeleteConfirmationDialog = ({
@@ -161,6 +170,10 @@ const GenQueryAiChat = ({
     columns: [],
   });
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const [sidePanel, setSidePanel] = useState<SidePanel>({
+    isOpen: false,
+    type: null,
+  });
 
   const selectedDatabase = params.id;
   const selectedConnection = params.connectionId;
@@ -213,12 +226,32 @@ const GenQueryAiChat = ({
   const suggestedQuestions: SuggestedQuestion[] = [
     {
       id: 1,
-      text: "Write a select query?",
+      text: "Write a select query to get all users?",
       icon: <Sparkles className="w-4 h-4 text-primary-600" />,
     },
     {
       id: 2,
       text: "How can I create a Live Table?",
+      icon: <Sparkles className="w-4 h-4 text-primary-600" />,
+    },
+    {
+      id: 3,
+      text: "Show me the schema of users table",
+      icon: <Sparkles className="w-4 h-4 text-primary-600" />,
+    },
+    {
+      id: 4,
+      text: "Generate a query to find active users",
+      icon: <Sparkles className="w-4 h-4 text-primary-600" />,
+    },
+    {
+      id: 5,
+      text: "Help me write a complex join query",
+      icon: <Sparkles className="w-4 h-4 text-primary-600" />,
+    },
+    {
+      id: 6,
+      text: "How to filter data by date range?",
       icon: <Sparkles className="w-4 h-4 text-primary-600" />,
     },
   ];
@@ -444,6 +477,17 @@ const GenQueryAiChat = ({
     setShowHistory(true);
   };
 
+  const handlePanelOpen = (type: SidePanel["type"]) => {
+    setSidePanel({ isOpen: true, type });
+    if (type === "history") {
+      fetchChatHistory();
+    }
+  };
+
+  const handlePanelClose = () => {
+    setSidePanel({ isOpen: false, type: null });
+  };
+
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
@@ -452,9 +496,7 @@ const GenQueryAiChat = ({
   }, [messages]);
 
   return (
-    <div
-      className={`relative h-[calc(100vh-65px)] transition-all duration-300 ease-in-out z-50 overflow-hidden`}
-    >
+    <div className="relative h-[calc(100vh-65px)] transition-all duration-300 ease-in-out z-50 overflow-hidden">
       <DeleteConfirmationDialog
         isOpen={showDeleteConfirmation}
         onClose={() => {
@@ -463,345 +505,434 @@ const GenQueryAiChat = ({
         }}
         onConfirm={handleConfirmDelete}
       />
-      <div className="p-4 h-full flex flex-col">
-        {showHistory ? (
-          // Chat History View
-          <div className="flex-1 flex flex-col min-h-0">
-            {/* History Header */}
-            <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <History className="w-5 h-5 text-primary-600" />
-                <h3 className="text-sm font-medium text-gray-900">
-                  Chat History
-                </h3>
-              </div>
+      <div className="p-4 h-full flex">
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-xl font-semibold text-gray-900">New Chat 1</h1>
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowHistory(false)}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                onClick={() => handleNewChat()}
+                className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
               >
-                <X className="w-4 h-4 text-gray-500" />
+                <PlusIcon className="w-4 h-4" />
+                New Chat
+              </button>
+              <button
+                onClick={() => handlePanelOpen("history")}
+                className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <History className="w-4 h-4" />
+                History
+              </button>
+              <button
+                onClick={() => handlePanelOpen("configure")}
+                className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <Settings className="w-4 h-4" />
+                Configure
+              </button>
+              <button
+                onClick={() => handlePanelOpen("monitoring")}
+                className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <Activity className="w-4 h-4" />
+                Monitoring
+              </button>
+              <button
+                onClick={() => handlePanelOpen("share")}
+                className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+              >
+                <Share2 className="w-4 h-4" />
+                Share
+              </button>
+              <button
+                onClick={() => handlePanelOpen("menu")}
+                className="p-1.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <MoreVertical className="w-4 h-4" />
               </button>
             </div>
+          </div>
 
-            {/* Conversation List */}
-            <div className="flex-1 overflow-y-auto">
-              {isLoadingHistory ? (
-                <div className="flex items-center justify-center py-4">
-                  <Bot className="w-5 h-5 text-primary-600 animate-spin" />
-                  <span className="ml-2 text-sm text-gray-500">
-                    Loading conversations...
-                  </span>
+          {/* Side Panel */}
+          {sidePanel.isOpen && (
+            <div className="absolute right-4 top-16 w-80 bg-white border border-gray-200 rounded-lg shadow-lg">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-gray-900 capitalize">
+                    {sidePanel.type}
+                  </h3>
+                  <button
+                    onClick={handlePanelClose}
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <X className="w-4 h-4 text-gray-500" />
+                  </button>
                 </div>
-              ) : chatHistory.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 px-4">
-                  <MessageSquare className="w-8 h-8 text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-500 text-center">
-                    No conversations yet
-                  </p>
-                  <p className="text-xs text-gray-400 text-center mt-1">
-                    Start a new chat to begin
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {chatHistory.map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      className="group relative bg-white rounded-lg border border-gray-100 hover:border-primary-200 transition-colors cursor-pointer"
-                    >
-                      <button
-                        onClick={() => loadConversation(conversation)}
-                        className="w-full p-3 text-left"
+                {sidePanel.type === "history" && (
+                  <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+                    {chatHistory.map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className="group relative bg-white rounded-lg border border-gray-100 hover:border-primary-200 transition-colors cursor-pointer"
                       >
-                        {/* First Message */}
-                        <div className="flex items-start gap-2">
-                          <div className="p-1 bg-primary-50 rounded">
-                            <MessageSquare className="w-4 h-4 text-primary-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {conversation.messages[0]?.content}
-                            </p>
-
-                            {/* Last Response Preview */}
-                            {conversation.messages.length > 1 && (
-                              <p className="text-sm text-gray-500 mt-1 line-clamp-1">
-                                {
-                                  conversation.messages[
-                                    conversation.messages.length - 1
-                                  ]?.content
-                                }
+                        <button
+                          onClick={() => loadConversation(conversation)}
+                          className="w-full p-3 text-left"
+                        >
+                          {/* First Message */}
+                          <div className="flex items-start gap-2">
+                            <div className="p-1 bg-primary-50 rounded">
+                              <MessageSquare className="w-4 h-4 text-primary-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {conversation.messages[0]?.content}
                               </p>
-                            )}
 
-                            {/* Metadata */}
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs text-gray-400">
-                                {new Date(
-                                  conversation.created_at
-                                ).toLocaleDateString()}{" "}
-                                at{" "}
-                                {new Date(
-                                  conversation.created_at
-                                ).toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </span>
-                              <span className="text-xs text-primary-400">
-                                •
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {conversation.messages.length} messages
-                              </span>
+                              {/* Last Response Preview */}
+                              {conversation.messages.length > 1 && (
+                                <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                                  {
+                                    conversation.messages[
+                                      conversation.messages.length - 1
+                                    ]?.content
+                                  }
+                                </p>
+                              )}
+
+                              {/* Metadata */}
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs text-gray-400">
+                                  {new Date(
+                                    conversation.created_at
+                                  ).toLocaleDateString()}{" "}
+                                  at{" "}
+                                  {new Date(
+                                    conversation.created_at
+                                  ).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                                <span className="text-xs text-primary-400">
+                                  •
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  {conversation.messages.length} messages
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </button>
+                        </button>
 
-                      {/* Delete Button */}
-                      <button
-                        onClick={(e) => deleteConversation(conversation.id, e)}
-                        className="absolute right-2 top-2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-all"
-                        title="Delete conversation"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-400 hover:text-red-500" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : messages.length === 0 ? (
-          // Empty State - Initial View
-          <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto">
-            <div className="absolute top-0 right-0 p-2">
-              <button
-                onClick={handleHistoryClick}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <History className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-            <div className="w-16 h-16 mb-6 flex-shrink-0">
-              <div className="w-full h-full relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-lg transform rotate-45"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Bot className="w-8 h-8 text-white" />
-                </div>
-              </div>
-            </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-3 flex-shrink-0">
-              Gen Query Assistant
-            </h2>
-            <p className="text-sm text-gray-500 mb-8 text-center max-w-[80%] flex-shrink-0">
-              The Assistant can make mistakes, always review the accuracy of
-              responses.
-            </p>
-            {/* Suggested Questions */}
-            <div className="flex flex-col items-center space-y-3 flex-shrink-0">
-              {suggestedQuestions.map((question) => (
-                <button
-                  key={question.id}
-                  onClick={() => handleSendMessage(question.text)}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-full border border-primary-200 hover:bg-primary-50 transition-colors text-gray-700 text-sm"
-                >
-                  {question.icon}
-                  <span>{question.text}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          // Chat View
-          <div className="flex-1 flex flex-col min-h-0">
-            {/* Chat Header */}
-            <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-lg transform rotate-45"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Bot className="w-4 h-4 text-white" />
+                        {/* Delete Button */}
+                        <button
+                          onClick={(e) =>
+                            deleteConversation(conversation.id, e)
+                          }
+                          className="absolute right-2 top-2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-all"
+                          title="Delete conversation"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400 hover:text-red-500" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <span className="text-sm font-medium text-gray-900">
-                  Gen Query Assistant
-                </span>
+                )}
+                {/* Add other panel content based on type */}
               </div>
-              <div className="flex items-center gap-2">
+            </div>
+          )}
+
+          {showHistory ? (
+            // Chat History View
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* History Header */}
+              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <History className="w-5 h-5 text-primary-600" />
+                  <h3 className="text-sm font-medium text-gray-900">
+                    Chat History
+                  </h3>
+                </div>
                 <button
-                  onClick={handleNewChat}
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                  title="New Chat"
-                >
-                  <PlusIcon className="w-4 h-4 text-gray-500" />
-                </button>
-                <button
-                  onClick={handleHistoryClick}
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <History className="w-4 h-4 text-gray-500" />
-                </button>
-                <button
-                  onClick={onClose}
+                  onClick={() => setShowHistory(false)}
                   className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                 >
                   <X className="w-4 h-4 text-gray-500" />
                 </button>
               </div>
-            </div>
 
-            {/* Messages */}
-            <div
-              className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0"
-              ref={messagesContainerRef}
-            >
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex items-start space-x-3 ${
-                    message.role === Role.USER
-                      ? "flex-row-reverse space-x-reverse"
-                      : ""
-                  }`}
-                >
+              {/* Conversation List */}
+              <div className="flex-1 overflow-y-auto">
+                {isLoadingHistory ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Bot className="w-5 h-5 text-primary-600 animate-spin" />
+                    <span className="ml-2 text-sm text-gray-500">
+                      Loading conversations...
+                    </span>
+                  </div>
+                ) : chatHistory.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 px-4">
+                    <MessageSquare className="w-8 h-8 text-gray-300 mb-2" />
+                    <p className="text-sm text-gray-500 text-center">
+                      No conversations yet
+                    </p>
+                    <p className="text-xs text-gray-400 text-center mt-1">
+                      Start a new chat to begin
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {chatHistory.map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className="group relative bg-white rounded-lg border border-gray-100 hover:border-primary-200 transition-colors cursor-pointer"
+                      >
+                        <button
+                          onClick={() => loadConversation(conversation)}
+                          className="w-full p-3 text-left"
+                        >
+                          {/* First Message */}
+                          <div className="flex items-start gap-2">
+                            <div className="p-1 bg-primary-50 rounded">
+                              <MessageSquare className="w-4 h-4 text-primary-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {conversation.messages[0]?.content}
+                              </p>
+
+                              {/* Last Response Preview */}
+                              {conversation.messages.length > 1 && (
+                                <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                                  {
+                                    conversation.messages[
+                                      conversation.messages.length - 1
+                                    ]?.content
+                                  }
+                                </p>
+                              )}
+
+                              {/* Metadata */}
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs text-gray-400">
+                                  {new Date(
+                                    conversation.created_at
+                                  ).toLocaleDateString()}{" "}
+                                  at{" "}
+                                  {new Date(
+                                    conversation.created_at
+                                  ).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                                <span className="text-xs text-primary-400">
+                                  •
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  {conversation.messages.length} messages
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={(e) =>
+                            deleteConversation(conversation.id, e)
+                          }
+                          className="absolute right-2 top-2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-all"
+                          title="Delete conversation"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400 hover:text-red-500" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : messages.length === 0 ? (
+            // Empty State - Initial View
+            <div className="flex-1 flex flex-col justify-center overflow-y-auto">
+              <p className="text-sm text-gray-500 mb-8 max-w-[80%] flex-shrink-0">
+                The Assistant can make mistakes, always review the accuracy of
+                responses.
+              </p>
+              {/* Suggested Questions */}
+              <div className="max-w-[800px] space-y-3 flex-shrink-0">
+                {suggestedQuestions.map((question) => (
+                  <button
+                    key={question.id}
+                    onClick={() => handleSendMessage(question.text)}
+                    className="mr-2 inline-flex items-center space-x-2 px-4 py-2 rounded-full border border-primary-200 hover:bg-primary-50 transition-colors text-gray-700 text-sm"
+                  >
+                    {question.icon}
+                    <span>{question.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            // Chat View
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* Messages */}
+              <div
+                className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0"
+                ref={messagesContainerRef}
+              >
+                {messages.map((message) => (
                   <div
-                    className={`flex-1 max-w-[80%] ${
-                      message.role === Role.USER ? "flex justify-end" : ""
+                    key={message.id}
+                    className={`flex items-start space-x-3 ${
+                      message.role === Role.USER
+                        ? "flex-row-reverse space-x-reverse"
+                        : ""
                     }`}
                   >
                     <div
-                      className={`p-3 rounded-lg ${
-                        message.role === Role.USER
-                          ? "bg-primary-100 text-primary-600"
-                          : "bg-gray-200"
+                      className={`flex-1 max-w-[80%] ${
+                        message.role === Role.USER ? "flex justify-end" : ""
                       }`}
                     >
-                      <FormattedMessage
-                        content={message.content}
-                        isDark={message.role === Role.USER}
-                      />
+                      <div
+                        className={`p-3 rounded-lg ${
+                          message.role === Role.USER
+                            ? "bg-primary-100 text-primary-600"
+                            : "bg-gray-200"
+                        }`}
+                      >
+                        <FormattedMessage
+                          content={message.content}
+                          isDark={message.role === Role.USER}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                  <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-5 h-5 text-primary-600 animate-pulse" />
+                ))}
+                {isLoading && (
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                      <Bot className="w-5 h-5 text-primary-600 animate-pulse" />
+                    </div>
+                    <p>Thinking...</p>
                   </div>
-                  <p>Thinking...</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Input Area - Only shown when chat history is not open */}
+          {!showHistory && (
+            <div className="relative flex-shrink-0 mt-auto">
+              {showDropdown && (
+                <div className="absolute bottom-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mb-1 max-h-[300px] overflow-y-auto">
+                  <div className="sticky top-0 bg-gray-50 px-3 py-1.5 border-b border-gray-200">
+                    <div className="text-sm font-medium text-gray-700">
+                      Tables
+                    </div>
+                  </div>
+                  <div className="py-0.5">
+                    {/* Tables Section */}
+                    {filteredItems
+                      .filter((item) => item.type === "table")
+                      .map((table) => (
+                        <button
+                          key={table.id}
+                          onClick={() => handleItemSelect(table)}
+                          className="w-full px-3 py-1 text-left flex items-center hover:bg-gray-50 text-sm group"
+                        >
+                          <Table className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600" />
+                          <span className="font-medium text-gray-900">
+                            {table.label}
+                          </span>
+                          {table.schema && (
+                            <span className="ml-2 text-gray-500 text-xs">
+                              {table.schema}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                  </div>
+
+                  <div className="sticky top-0 bg-gray-50 px-3 py-1.5 border-y border-gray-200">
+                    <div className="text-sm font-medium text-gray-700">
+                      Columns
+                    </div>
+                  </div>
+                  <div className="py-0.5">
+                    {/* Columns Section */}
+                    {filteredItems
+                      .filter((item) => item.type === "column")
+                      .map((column) => (
+                        <button
+                          key={column.id}
+                          onClick={() => handleItemSelect(column)}
+                          className="w-full px-3 py-1 text-left flex items-center hover:bg-gray-50 text-sm group"
+                        >
+                          <Columns className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600" />
+                          <span className="text-gray-900">{column.label}</span>
+                          <span className="ml-auto text-gray-500 text-xs">
+                            {column.parentTable}
+                          </span>
+                        </button>
+                      ))}
+                    {filteredItems.length === 0 && (
+                      <div className="px-3 py-1 text-sm text-gray-500">
+                        No matching tables or columns found
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {/* Input Area - Only shown when chat history is not open */}
-        {!showHistory && (
-          <div className="relative flex-shrink-0 mt-auto">
-            {showDropdown && (
-              <div className="absolute bottom-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mb-1 max-h-[300px] overflow-y-auto">
-                <div className="sticky top-0 bg-gray-50 px-3 py-1.5 border-b border-gray-200">
-                  <div className="text-sm font-medium text-gray-700">
-                    Tables
-                  </div>
-                </div>
-                <div className="py-0.5">
-                  {/* Tables Section */}
-                  {filteredItems
-                    .filter((item) => item.type === "table")
-                    .map((table) => (
-                      <button
-                        key={table.id}
-                        onClick={() => handleItemSelect(table)}
-                        className="w-full px-3 py-1 text-left flex items-center hover:bg-gray-50 text-sm group"
-                      >
-                        <Table className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600" />
-                        <span className="font-medium text-gray-900">
-                          {table.label}
-                        </span>
-                        {table.schema && (
-                          <span className="ml-2 text-gray-500 text-xs">
-                            {table.schema}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                </div>
-
-                <div className="sticky top-0 bg-gray-50 px-3 py-1.5 border-y border-gray-200">
-                  <div className="text-sm font-medium text-gray-700">
-                    Columns
-                  </div>
-                </div>
-                <div className="py-0.5">
-                  {/* Columns Section */}
-                  {filteredItems
-                    .filter((item) => item.type === "column")
-                    .map((column) => (
-                      <button
-                        key={column.id}
-                        onClick={() => handleItemSelect(column)}
-                        className="w-full px-3 py-1 text-left flex items-center hover:bg-gray-50 text-sm group"
-                      >
-                        <Columns className="w-4 h-4 mr-2 text-gray-400 group-hover:text-gray-600" />
-                        <span className="text-gray-900">{column.label}</span>
-                        <span className="ml-auto text-gray-500 text-xs">
-                          {column.parentTable}
-                        </span>
-                      </button>
-                    ))}
-                  {filteredItems.length === 0 && (
-                    <div className="px-3 py-1 text-sm text-gray-500">
-                      No matching tables or columns found
-                    </div>
-                  )}
-                </div>
+              <div className="relative">
+                {/* <button
+                  ref={buttonRef}
+                  onClick={handleAtButtonClick}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  <span className="text-gray-500 text-sm font-medium">@</span>
+                </button> */}
+                <textarea
+                  ref={inputRef}
+                  value={inputMessage}
+                  onChange={handleInputChange}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder="Type @ for tables and columns"
+                  className="w-full px-2 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400 resize-none overflow-hidden"
+                  disabled={isLoading}
+                  rows={1}
+                  style={{
+                    minHeight: "44px",
+                    maxHeight: "120px",
+                  }}
+                />
+                <button
+                  onClick={() => handleSendMessage()}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors ${
+                    !inputMessage.trim() || isLoading
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-primary-600 hover:bg-primary-50 border border-primary-200"
+                  }`}
+                  disabled={!inputMessage.trim() || isLoading}
+                >
+                  <Send className="w-4 h-4" />
+                </button>
               </div>
-            )}
-            <div className="relative">
-              {/* <button
-                ref={buttonRef}
-                onClick={handleAtButtonClick}
-                className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
-              >
-                <span className="text-gray-500 text-sm font-medium">@</span>
-              </button> */}
-              <textarea
-                ref={inputRef}
-                value={inputMessage}
-                onChange={handleInputChange}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                placeholder="Type @ for tables and columns"
-                className="w-full px-2 py-3 text-sm border border-gray-200 rounded-lg pr-10 focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400 resize-none overflow-hidden"
-                disabled={isLoading}
-                rows={1}
-                style={{
-                  minHeight: "44px",
-                  maxHeight: "120px",
-                }}
-              />
-              <button
-                onClick={() => handleSendMessage()}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors ${
-                  !inputMessage.trim() || isLoading
-                    ? "text-gray-400 cursor-not-allowed"
-                    : "text-primary-600 hover:bg-primary-50 border border-primary-200"
-                }`}
-                disabled={!inputMessage.trim() || isLoading}
-              >
-                <Send className="w-4 h-4" />
-              </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

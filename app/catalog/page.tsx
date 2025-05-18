@@ -108,7 +108,9 @@ export default function CatalogPage() {
                   <Database className="w-4 h-4 text-gray-600" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-blue-600 font-medium">{db.name}</span>
+                  <span className="text-primary-600 font-medium">
+                    {db.name}
+                  </span>
                   <span className="text-sm text-gray-500">
                     {db.connectionName}
                   </span>

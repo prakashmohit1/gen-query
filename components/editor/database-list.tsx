@@ -198,7 +198,7 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
   }, [connectionId, selectConnection]);
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full">
       {/* Header with search and refresh */}
       <div className="p-2 border-b">
         <div className="flex items-center gap-2">
@@ -245,7 +245,7 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
                   <button
                     className={`flex flex-col w-full px-3 py-2 text-xs rounded-lg transition-colors ${
                       selectedConnection?.id === db.id
-                        ? "bg-blue-50 text-blue-900"
+                        ? "bg-primary-50 text-primary-900"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                     onClick={() => {
@@ -254,7 +254,7 @@ export function DatabaseList({ connectionId }: { connectionId?: string }) {
                     }}
                   >
                     <div className="flex items-center w-full">
-                      <Database className="w-4 h-4 text-blue-600" />
+                      <Database className="w-4 h-4 text-primary-600" />
                       <span className="flex-1 text-left ml-2">{db.name}</span>
                       <ChevronRight
                         className={cn(

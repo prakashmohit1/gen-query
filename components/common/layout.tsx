@@ -38,7 +38,7 @@ const Layout = memo(function Layout({ children, session }: LayoutProps) {
 
   return (
     <DatabaseProvider>
-      <div className="w-full h-screen">
+      <div className="w-full h-screen bg-primary-50">
         <Header
           session={session}
           isAIAgentOpen={isAIAgentOpen}
@@ -50,16 +50,14 @@ const Layout = memo(function Layout({ children, session }: LayoutProps) {
           <SideMenu isCollapsed={isSideMenuCollapsed} />
           <div
             className={cn(
-              `${
-                isAIAgentOpen
-                  ? "w-[calc(100%-20rem-200px)]"
-                  : "w-[calc(100%-200px)]"
-              } bg-white rounded mt-[calc(70px)] border border-gray-300 rounded`,
+              `${isAIAgentOpen ? "w-[calc(100%-25rem)]" : "w-[100%]"}`,
 
-              "transition-all duration-300"
+              "transition-all duration-300 pr-[2px]"
             )}
           >
-            {children}
+            <div className="h-full rounded-lg border border-primary-500 bg-white">
+              {children}
+            </div>
           </div>
           <AiAgent
             isOpen={isAIAgentOpen}

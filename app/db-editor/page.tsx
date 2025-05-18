@@ -56,35 +56,33 @@ export default function EditorPage() {
   }, [movedQueryText]);
 
   return (
-    <div className="h-screen bg-white">
-      <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={20} className="my-0" minSize={4}>
-          <ResizableHandle className="absolute right-0 h-full bg-transparent" />
-          <DatabaseList />
-        </ResizablePanel>
+    <ResizablePanelGroup direction="horizontal">
+      <ResizablePanel defaultSize={20} className="my-0" minSize={4}>
+        <ResizableHandle className="absolute right-0 h-full bg-transparent" />
+        <DatabaseList />
+      </ResizablePanel>
 
-        <ResizablePanel
-          defaultSize={80}
-          className="border border-gray-300 rounded mx-[2px] my-0"
-        >
-          <ResizablePanelGroup direction="vertical">
-            <ResizablePanel defaultSize={40}>
-              <SQLEditor
-                parameters={parameters}
-                setParameters={setParameters}
-                value={query}
-                onChange={setQuery}
-                onExecute={handleExecuteQuery}
-                isExecuting={isExecuting}
-                tables={[]}
-                dbType={selectedConnection?.db_type.toLowerCase()}
-                results={results}
-                error={error}
-              />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </div>
+      <ResizablePanel
+        defaultSize={80}
+        className="border-l border-primary-300 mx-[2px] my-0"
+      >
+        <ResizablePanelGroup direction="vertical">
+          <ResizablePanel defaultSize={40}>
+            <SQLEditor
+              parameters={parameters}
+              setParameters={setParameters}
+              value={query}
+              onChange={setQuery}
+              onExecute={handleExecuteQuery}
+              isExecuting={isExecuting}
+              tables={[]}
+              dbType={selectedConnection?.db_type.toLowerCase()}
+              results={results}
+              error={error}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }

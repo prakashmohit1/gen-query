@@ -373,7 +373,7 @@ export default function TablePage() {
                     </div>
                     <div className="flex flex-col flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-blue-600 font-medium">
+                        <span className="text-primary-600 font-medium">
                           {column.name}
                         </span>
                         <span className="text-sm text-gray-500">
@@ -389,10 +389,10 @@ export default function TablePage() {
                           {column.tags.map((tag, index) => (
                             <div
                               key={`${tag.key}-${index}`}
-                              className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs group/tag"
+                              className="flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs group/tag"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <span className="text-blue-700">
+                              <span className="text-primary-700">
                                 {tag.key}: {tag.value}
                               </span>
                               <button
@@ -474,9 +474,9 @@ export default function TablePage() {
                   tags.map((tag, index) => (
                     <div
                       key={`${tag.key}-${index}`}
-                      className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs group/tag"
+                      className="flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs group/tag"
                     >
-                      <span className="text-blue-700">
+                      <span className="text-primary-700">
                         {tag.key}: {tag.value}
                       </span>
                       <button
@@ -580,9 +580,9 @@ export default function TablePage() {
                   selectedColumn.tags.map((tag, index) => (
                     <div
                       key={`${tag.key}-${index}`}
-                      className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-sm group/tag"
+                      className="flex items-center gap-1 rounded-full bg-primary-50 px-2 py-1 text-sm group/tag"
                     >
-                      <span className="text-blue-700">
+                      <span className="text-primary-700">
                         {tag.key}: {tag.value}
                       </span>
                       <button

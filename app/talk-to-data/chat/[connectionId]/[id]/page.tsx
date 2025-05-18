@@ -25,7 +25,8 @@ import {
 import { aiAgentServices } from "@/lib/services/ai-agent";
 import { databaseService } from "@/lib/services/database.service";
 import Role from "@/app/enums/role";
-import { FormattedMessage } from "./formatted-message";
+import { FormattedMessage } from "@/components/common/formatted-message";
+import { useParams } from "next/navigation";
 
 interface Message {
   role: Role;
@@ -130,7 +131,12 @@ const DeleteConfirmationDialog = ({
   );
 };
 
-const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
+const GenQueryAiChat = ({
+  isOpen,
+  onClose,
+  selectedDatabaseId,
+}: AiAgentProps) => {
+  const params = useParams();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -142,7 +148,6 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   const [currentConversationId, setCurrentConversationId] = useState<
     string | null
   >(null);
-  const { selectedDatabase, selectedConnection } = useSelectedDatabase();
   const { databases, fetchTableColumns } = useDatabaseList();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -156,6 +161,9 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
     columns: [],
   });
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const selectedDatabase = params.id;
+  const selectedConnection = params.connectionId;
 
   // Create a memoized list of database items from the context
   const databaseItems = useMemo(() => {
@@ -445,9 +453,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
 
   return (
     <div
-      className={`relative right-0 h-[calc(100vh-65px)] transition-all duration-300 ease-in-out z-50 overflow-hidden pr-[2px] ${
-        isOpen ? "w-[25rem]" : "w-0"
-      }`}
+      className={`relative h-[calc(100vh-65px)] transition-all duration-300 ease-in-out z-50 overflow-hidden`}
     >
       <DeleteConfirmationDialog
         isOpen={showDeleteConfirmation}
@@ -457,7 +463,7 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
         }}
         onConfirm={handleConfirmDelete}
       />
-      <div className="p-4 h-full flex flex-col w-[calc(25rem-1rem)] bg-white rounded-t-lg rounded-bl-none rounded-br-none border border-primary-300 shadow-lg">
+      <div className="p-4 h-full flex flex-col">
         {showHistory ? (
           // Chat History View
           <div className="flex-1 flex flex-col min-h-0">
@@ -801,4 +807,4 @@ const AiAgent = ({ isOpen, onClose, selectedDatabaseId }: AiAgentProps) => {
   );
 };
 
-export default AiAgent;
+export default GenQueryAiChat;

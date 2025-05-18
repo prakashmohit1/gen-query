@@ -32,7 +32,7 @@ export default function ProfilePage() {
           <h3 className="text-sm font-medium text-gray-900">Organization</h3>
           <p className="text-sm text-gray-500 mb-2">{user?.team_name}</p>
           <div className="flex gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
               {user?.role || "No role"}
             </span>
           </div>

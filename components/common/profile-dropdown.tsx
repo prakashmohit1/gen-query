@@ -18,7 +18,7 @@ const ProfileDropdown = ({ session }: any) => {
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button className="IconButton" aria-label="Customise options">
-          <div className="w-7 h-7 flex items-center justify-center bg-blue-500 text-white rounded-full">
+          <div className="w-7 h-7 flex items-center justify-center bg-primary-500 text-white rounded-full">
             {user?.name.slice(0, 1)}
           </div>
         </button>

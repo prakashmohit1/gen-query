@@ -19,7 +19,7 @@ export default function AcceptInvitePage() {
 
   if (!inviteToken) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-indigo-50">
         <div className="mx-auto max-w-md text-center px-6">
           <div className="mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
@@ -74,13 +74,13 @@ export default function AcceptInvitePage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div className="flex min-h-screen bg-gradient-to-br from-primary-50 to-indigo-50">
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
-              <Users className="h-8 w-8 text-blue-600" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 mb-4">
+              <Users className="h-8 w-8 text-primary-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Join Your Team
@@ -129,7 +129,7 @@ export default function AcceptInvitePage() {
       </div>
 
       {/* Right side - Features */}
-      <div className="hidden lg:flex flex-1 flex-col justify-center p-12 bg-gradient-to-br from-blue-600 to-indigo-700">
+      <div className="hidden lg:flex flex-1 flex-col justify-center p-12 bg-gradient-to-br from-primary-600 to-indigo-700">
         <div className="max-w-md mx-auto text-white">
           <Building2 className="h-12 w-12 mb-8" />
           <h2 className="text-3xl font-bold mb-6">Welcome to the team!</h2>
@@ -163,13 +163,13 @@ function FeatureItem({
   return (
     <div className="flex items-start">
       <div className="flex-shrink-0">
-        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-blue-500 bg-opacity-25">
-          <ArrowRight className="h-5 w-5 text-blue-100" />
+        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary-500 bg-opacity-25">
+          <ArrowRight className="h-5 w-5 text-primary-100" />
         </div>
       </div>
       <div className="ml-4">
         <h3 className="text-xl font-semibold mb-1">{title}</h3>
-        <p className="text-blue-100">{description}</p>
+        <p className="text-primary-100">{description}</p>
       </div>
     </div>
   );

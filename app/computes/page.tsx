@@ -106,7 +106,7 @@ export default function ComputePage() {
   return (
     <div className="w-full bg-white rounded-lg shadow-sm p-4">
       <div className="flex flex-col space-y-2">
-        <div className="text-xl font-semibold text-blue-900">Databases</div>
+        <div className="text-xl font-semibold text-primary-900">Databases</div>
 
         <div className="flex p-4 w-full items-center">
           <div className="flex filter items-center border border-gray-200 rounded h-[30px] px-2">
@@ -122,7 +122,7 @@ export default function ComputePage() {
           <div className="flex-1 flex justify-end">
             <Button
               size="sm"
-              className="text-[13px] h-[30px] bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors"
+              className="text-[13px] h-[30px] bg-white text-primary-600 border border-primary-200 hover:bg-primary-50 transition-colors"
               onClick={() => {
                 setIsEditModalOpen(true);
                 setIsOpen(true);
@@ -135,7 +135,7 @@ export default function ComputePage() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+            <Loader2 className="w-6 h-6 text-primary-600 animate-spin" />
           </div>
         ) : error ? (
           <div className="text-red-500 text-center py-4">{error}</div>
@@ -159,15 +159,19 @@ export default function ComputePage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200 h-[30px] text-left">
-                        <th className="font-medium text-blue-900">Status</th>
-                        <th className="font-medium text-blue-900">Name</th>
-                        <th className="font-medium text-blue-900">
+                        <th className="font-medium text-primary-900">Status</th>
+                        <th className="font-medium text-primary-900">Name</th>
+                        <th className="font-medium text-primary-900">
                           Database Name
                         </th>
-                        <th className="font-medium text-blue-900">Username</th>
-                        <th className="font-medium text-blue-900">Host</th>
-                        <th className="font-medium text-blue-900">Port</th>
-                        <th className="font-medium text-blue-900">Actions</th>
+                        <th className="font-medium text-primary-900">
+                          Username
+                        </th>
+                        <th className="font-medium text-primary-900">Host</th>
+                        <th className="font-medium text-primary-900">Port</th>
+                        <th className="font-medium text-primary-900">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -192,22 +196,22 @@ export default function ComputePage() {
                           <td>{conn.port}</td>
                           <td className="space-x-2">
                             <button
-                              className="hover:bg-blue-50 p-1 rounded"
+                              className="hover:bg-primary-50 p-1 rounded"
                               onClick={() => handleToggleStatus(conn)}
                               disabled={updatingStatus === conn.id}
                             >
                               {updatingStatus === conn.id ? (
-                                <Loader2 className="w-3 h-3 text-blue-600 animate-spin" />
+                                <Loader2 className="w-3 h-3 text-primary-600 animate-spin" />
                               ) : conn.is_active ? (
-                                <Pause className="w-3 h-3 text-blue-600" />
+                                <Pause className="w-3 h-3 text-primary-600" />
                               ) : (
-                                <Play className="w-3 h-3 text-blue-600" />
+                                <Play className="w-3 h-3 text-primary-600" />
                               )}
                             </button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <button className="hover:bg-blue-50 p-1 rounded">
-                                  <EllipsisVertical className="w-4 h-4 text-blue-600" />
+                                <button className="hover:bg-primary-50 p-1 rounded">
+                                  <EllipsisVertical className="w-4 h-4 text-primary-600" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-32">
@@ -288,7 +292,7 @@ export default function ComputePage() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors"
+              className="bg-white text-primary-600 border border-primary-200 hover:bg-primary-50 transition-colors"
               onClick={() =>
                 deletingConnection?.id && handleDelete(deletingConnection.id)
               }

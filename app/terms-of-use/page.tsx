@@ -5,11 +5,11 @@ import React from "react";
 const TermsOfUsePage = () => {
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-blue-900 mb-8">Terms of Use</h1>
+      <h1 className="text-3xl font-bold text-primary-900 mb-8">Terms of Use</h1>
 
       <div className="prose prose-blue max-w-none">
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             1. Acceptance of Terms
           </h2>
           <p className="text-gray-600 mb-4">
@@ -19,7 +19,7 @@ const TermsOfUsePage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             2. Database Services
           </h2>
           <p className="text-gray-600 mb-4">
@@ -38,7 +38,7 @@ const TermsOfUsePage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             3. User Responsibilities
           </h2>
           <p className="text-gray-600 mb-4">Users of Gen Query agree to:</p>
@@ -51,7 +51,7 @@ const TermsOfUsePage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             4. Privacy and Data Protection
           </h2>
           <p className="text-gray-600 mb-4">
@@ -67,7 +67,7 @@ const TermsOfUsePage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             5. Service Availability and Support
           </h2>
           <p className="text-gray-600 mb-4">
@@ -82,7 +82,7 @@ const TermsOfUsePage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             6. Intellectual Property
           </h2>
           <p className="text-gray-600 mb-4">
@@ -93,7 +93,7 @@ const TermsOfUsePage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             7. Limitation of Liability
           </h2>
           <p className="text-gray-600 mb-4">
@@ -104,7 +104,7 @@ const TermsOfUsePage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             8. Changes to Terms
           </h2>
           <p className="text-gray-600 mb-4">
@@ -115,7 +115,7 @@ const TermsOfUsePage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             9. Contact Information
           </h2>
           <p className="text-gray-600 mb-4">

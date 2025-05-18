@@ -1,13 +1,12 @@
-const { violet, blackA, mauve, green, gray } = require("@radix-ui/colors");
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+import type { Config } from "tailwindcss";
+
+const config = {
   darkMode: ["class"],
   content: [
     "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
-    "*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     container: {
@@ -26,6 +25,17 @@ module.exports = {
         foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
+          50: "hsl(var(--primary-50))",
+          100: "hsl(var(--primary-100))",
+          200: "hsl(var(--primary-200))",
+          300: "hsl(var(--primary-300))",
+          400: "hsl(var(--primary-400))",
+          500: "hsl(var(--primary-500))",
+          600: "hsl(var(--primary-600))",
+          700: "hsl(var(--primary-700))",
+          800: "hsl(var(--primary-800))",
+          900: "hsl(var(--primary-900))",
+          950: "hsl(var(--primary-950))",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -52,11 +62,6 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        ...mauve,
-        ...violet,
-        ...green,
-        ...blackA,
-        ...gray,
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -65,30 +70,21 @@ module.exports = {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: 0 },
+          from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: 0 },
-        },
-        overlayShow: {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
-        contentShow: {
-          from: {
-            opacity: "0",
-            transform: "translate(-50%, -48%) scale(0.96)",
-          },
-          to: { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+          to: { height: "0" },
         },
       },
       animation: {
-        overlayShow: "overlayShow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
-        contentShow: "contentShow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
   plugins: [require("tailwindcss-animate")],
-};
+} satisfies Config;
+
+export default config;

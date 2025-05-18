@@ -190,7 +190,7 @@ export default function QueriesPage() {
               <TableHead>
                 <button
                   onClick={() => handleSort("name")}
-                  className="flex items-center gap-2 hover:text-blue-600"
+                  className="flex items-center gap-2 hover:text-primary-600"
                 >
                   Name
                   <ArrowUpDown className="w-4 h-4" />
@@ -200,7 +200,7 @@ export default function QueriesPage() {
               <TableHead>
                 <button
                   onClick={() => handleSort("is_active")}
-                  className="flex items-center gap-2 hover:text-blue-600"
+                  className="flex items-center gap-2 hover:text-primary-600"
                 >
                   Status
                   <ArrowUpDown className="w-4 h-4" />
@@ -209,7 +209,7 @@ export default function QueriesPage() {
               <TableHead>
                 <button
                   onClick={() => handleSort("created_at")}
-                  className="flex items-center gap-2 hover:text-blue-600"
+                  className="flex items-center gap-2 hover:text-primary-600"
                 >
                   Created At
                   <ArrowUpDown className="w-4 h-4" />

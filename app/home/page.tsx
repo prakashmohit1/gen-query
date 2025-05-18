@@ -307,7 +307,7 @@ export default function HomePage() {
                       <TableCell>{query.database}</TableCell>
                       <TableCell>{query.timestamp}</TableCell>
                       <TableCell>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
                           {query.status}
                         </span>
                       </TableCell>

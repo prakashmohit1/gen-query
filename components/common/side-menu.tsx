@@ -17,6 +17,8 @@ import {
   Blocks,
   FileText,
   Home,
+  MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,12 +26,17 @@ import { cn } from "@/lib/utils";
 
 const menuItems = [
   {
-    category: "",
+    category: "Common",
     items: [
       {
         title: "Home",
         href: "/home",
         icon: Home,
+      },
+      {
+        title: "SQL Compute",
+        href: "/sql-compute",
+        icon: Database,
       },
       {
         title: "Catalog",
@@ -43,8 +50,13 @@ const menuItems = [
       },
       {
         title: "Recent",
-        href: "/recent",
+        href: "/query-history",
         icon: History,
+      },
+      {
+        title: "Talk to Data",
+        href: "/talk-to-data",
+        icon: MessageSquare,
       },
       {
         title: "Access Control",
@@ -119,7 +131,7 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
                       href={item.href}
                       className={`flex items-center w-full px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
                         pathname === item.href
-                          ? "bg-blue-50 text-blue-900"
+                          ? "bg-primary-50 text-primary-900"
                           : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                       }`}
                       onClick={() => setOpen(false)}
@@ -138,20 +150,10 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
       {/* Desktop Menu */}
       <div
         className={cn(
-          "hidden md:flex flex-col bg-white transition-all duration-300",
+          "hidden md:flex flex-col transition-all duration-300 bg-transparent",
           isCollapsed ? "w-[70px]" : "w-[200px]"
         )}
       >
-        <div className="border-b px-4 py-4">
-          <h2
-            className={cn(
-              "text-lg font-semibold transition-opacity",
-              isCollapsed && "opacity-0"
-            )}
-          >
-            Menu
-          </h2>
-        </div>
         <nav className="flex flex-col p-4">
           {menuItems.map((category) => (
             <div key={category.category} className="mb-6">
@@ -171,7 +173,7 @@ export function SideMenu({ isCollapsed }: SideMenuProps) {
                     href={item.href}
                     className={`flex items-center w-full px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
                       pathname === item.href
-                        ? "bg-blue-50 text-blue-900"
+                        ? "bg-primary-50 text-primary-900"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >

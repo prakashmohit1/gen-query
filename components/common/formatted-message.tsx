@@ -44,7 +44,9 @@ export function FormattedMessage({
             <code
               key={index}
               className={`px-1.5 py-0.5 rounded font-mono text-[13px] whitespace-normal break-all ${
-                isDark ? "bg-white/10 text-white" : "bg-gray-100 text-blue-600"
+                isDark
+                  ? "bg-white/10 text-white"
+                  : "bg-gray-100 text-primary-600"
               }`}
             >
               {segment.content}

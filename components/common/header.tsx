@@ -32,29 +32,29 @@ const Header = ({
   };
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-[51] bg-gradient-to-r from-blue-100 via-blue-50 to-white border-b border-blue-200 shadow-sm">
+      <header className="sticky top-0 left-0 right-0 z-[51]">
         <div className="mx-auto px-4">
           <div className="flex items-center h-16">
             {/* Logo and Brand */}
-            <div className="flex items-center">
+            <div className="flex items-center flex-row-reverse">
               <Link href="/" className="flex items-center space-x-3 group">
                 {/* Logo */}
                 <div className="w-8 h-8 relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg rotate-45 transform -translate-y-0.5 -translate-x-0.5 group-hover:translate-y-0 group-hover:translate-x-0 transition-transform"></div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg rotate-45 shadow-lg"></div>
-                  <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm">
-                    GQ
-                  </span>
+                  <img
+                    src="/logo.png"
+                    alt="Gen Query Logo"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 {/* Brand Name */}
-                <span className="text-lg font-semibold bg-gradient-to-r from-blue-800 to-blue-600 bg-clip-text text-transparent">
+                <span className="text-lg font-semibold text-primary-700 bg-clip-text">
                   Gen Query
                 </span>
               </Link>
               <Button
                 variant="ghost"
                 size="icon"
-                className="ml-4 text-gray-500 hover:text-blue-600"
+                className="text-gray-500 hover:text-primary-600"
                 onClick={() => setIsSideMenuCollapsed(!isSideMenuCollapsed)}
               >
                 <Menu className="h-5 w-5" />
@@ -70,10 +70,10 @@ const Header = ({
               <div className="relative group">
                 <button
                   onClick={() => setIsAIAgentOpen(!isAIAgentOpen)}
-                  className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center group-hover:bg-primary-200 transition-colors cursor-pointer"
                 >
                   <Bot
-                    className={`w-5 h-5 text-blue-600 ${
+                    className={`w-5 h-5 text-primary-600 ${
                       isAIAgentOpen ? "" : "animate-pulse"
                     }`}
                   />
@@ -83,31 +83,31 @@ const Header = ({
               {/* Profile Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger className="focus:outline-none">
-                  <Avatar className="h-8 w-8 hover:ring-2 hover:ring-blue-300 transition-all">
+                  <Avatar className="h-8 w-8 hover:ring-2 hover:ring-primary-300 transition-all">
                     <AvatarImage src={session?.user?.image} />
-                    <AvatarFallback className="bg-blue-200 text-blue-900">
+                    <AvatarFallback className="bg-primary-200 text-primary-900">
                       {session?.user?.name?.[0] || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-56 bg-white/95 backdrop-blur-sm border-blue-200 shadow-lg"
+                  className="w-56 bg-white/95 backdrop-blur-sm border-primary-200 shadow-lg"
                 >
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium text-blue-900">
+                      <p className="text-sm font-medium text-primary-900">
                         {session?.user?.name}
                       </p>
-                      <p className="text-xs text-blue-600/70 truncate">
+                      <p className="text-xs text-primary-600/70 truncate">
                         {session?.user?.email}
                       </p>
                     </div>
                   </div>
-                  <DropdownMenuSeparator className="bg-blue-200/50" />
+                  <DropdownMenuSeparator className="bg-primary-200/50" />
                   <DropdownMenuItem
                     onClick={() => router.push("/settings/profile")}
-                    className="focus:bg-blue-50 focus:text-blue-900 text-blue-700 cursor-pointer"
+                    className="focus:bg-primary-50 focus:text-primary-900 text-primary-700 cursor-pointer"
                   >
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>

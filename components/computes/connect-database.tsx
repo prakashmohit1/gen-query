@@ -314,7 +314,7 @@ export default function ConnectDatabase({
                     onClick={() => handleDataSourceSelect(source)}
                     className={`flex items-center gap-3 p-4 text-left rounded-lg border transition-colors relative ${
                       source.value === "postgresql" || source.value === "mysql"
-                        ? "border-gray-200 hover:border-blue-400 hover:bg-blue-50"
+                        ? "border-gray-200 hover:border-primary-400 hover:bg-primary-50"
                         : "border-gray-100 bg-gray-50 cursor-not-allowed"
                     }`}
                   >
@@ -387,7 +387,7 @@ export default function ConnectDatabase({
                               id={field.id}
                               placeholder={field.placeholder}
                               disabled={loading}
-                              className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
                               {...form.register(field.id)}
                             />
                           ) : field.type === "textarea" ? (
@@ -395,7 +395,7 @@ export default function ConnectDatabase({
                               id={field.id}
                               placeholder={field.placeholder}
                               disabled={loading}
-                              className="w-full min-h-[60px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="w-full min-h-[60px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
                               {...form.register(field.id)}
                             />
                           ) : field.type === "password" ? (
@@ -404,7 +404,7 @@ export default function ConnectDatabase({
                               id={field.id}
                               placeholder={field.placeholder}
                               disabled={loading}
-                              className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
                               {...form.register(field.id)}
                             />
                           ) : field.type === "select" ? (
@@ -475,7 +475,7 @@ export default function ConnectDatabase({
       <Dialog open={showComingSoon} onOpenChange={setShowComingSoon}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-blue-600">
+            <DialogTitle className="flex items-center gap-2 text-primary-600">
               <Sparkles className="h-5 w-5" />
               Coming Soon!
             </DialogTitle>
@@ -495,7 +495,7 @@ export default function ConnectDatabase({
           <DialogFooter>
             <Button
               onClick={() => setShowComingSoon(false)}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-primary-600 hover:bg-primary-700"
             >
               Got it
             </Button>

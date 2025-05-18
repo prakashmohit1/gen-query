@@ -229,7 +229,7 @@ export default function IdentityPage() {
             </div>
           ) : (
             <h1
-              className="text-2xl font-semibold cursor-pointer hover:text-blue-600"
+              className="text-2xl font-semibold cursor-pointer hover:text-primary-600"
               onDoubleClick={() => setIsEditingOrgName(true)}
             >
               {orgName}

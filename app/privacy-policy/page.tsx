@@ -5,11 +5,13 @@ import React from "react";
 const PrivacyPolicyPage = () => {
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-blue-900 mb-8">Privacy Policy</h1>
+      <h1 className="text-3xl font-bold text-primary-900 mb-8">
+        Privacy Policy
+      </h1>
 
       <div className="prose prose-blue max-w-none">
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             1. Introduction
           </h2>
           <p className="text-gray-600 mb-4">
@@ -20,10 +22,10 @@ const PrivacyPolicyPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             2. Information We Collect
           </h2>
-          <h3 className="text-xl font-medium text-blue-700 mb-3">
+          <h3 className="text-xl font-medium text-primary-700 mb-3">
             2.1 Personal Information
           </h3>
           <ul className="list-disc pl-6 text-gray-600 mb-4">
@@ -33,7 +35,7 @@ const PrivacyPolicyPage = () => {
             <li>Payment information</li>
           </ul>
 
-          <h3 className="text-xl font-medium text-blue-700 mb-3">
+          <h3 className="text-xl font-medium text-primary-700 mb-3">
             2.2 Usage Data
           </h3>
           <ul className="list-disc pl-6 text-gray-600 mb-4">
@@ -45,7 +47,7 @@ const PrivacyPolicyPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             3. How We Use Your Information
           </h2>
           <p className="text-gray-600 mb-4">
@@ -62,7 +64,7 @@ const PrivacyPolicyPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             4. Data Security
           </h2>
           <p className="text-gray-600 mb-4">
@@ -78,7 +80,7 @@ const PrivacyPolicyPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             5. Data Sharing and Disclosure
           </h2>
           <p className="text-gray-600 mb-4">
@@ -95,7 +97,7 @@ const PrivacyPolicyPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             6. Your Privacy Rights
           </h2>
           <p className="text-gray-600 mb-4">You have the right to:</p>
@@ -109,7 +111,7 @@ const PrivacyPolicyPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             7. Cookies and Tracking
           </h2>
           <p className="text-gray-600 mb-4">
@@ -124,7 +126,7 @@ const PrivacyPolicyPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             8. Children's Privacy
           </h2>
           <p className="text-gray-600 mb-4">
@@ -134,7 +136,7 @@ const PrivacyPolicyPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             9. International Data Transfers
           </h2>
           <p className="text-gray-600 mb-4">
@@ -145,7 +147,7 @@ const PrivacyPolicyPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             10. Changes to Privacy Policy
           </h2>
           <p className="text-gray-600 mb-4">
@@ -155,7 +157,7 @@ const PrivacyPolicyPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-blue-800 mb-4">
+          <h2 className="text-2xl font-semibold text-primary-800 mb-4">
             11. Contact Us
           </h2>
           <p className="text-gray-600 mb-4">

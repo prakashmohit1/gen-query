@@ -68,7 +68,7 @@ export function QueryPerformance({ data }: ResultsTableProps) {
               <div className="text-sm font-medium text-gray-500 mb-1">
                 Execution Time
               </div>
-              <div className="text-sm font-medium text-blue-600">
+              <div className="text-sm font-medium text-primary-600">
                 {execution_time_ms?.toFixed(2) || "0"} ms
               </div>
             </div>
@@ -78,7 +78,7 @@ export function QueryPerformance({ data }: ResultsTableProps) {
               <div className="text-sm font-medium text-gray-500 mb-1">
                 Rows Returned
               </div>
-              <div className="text-sm font-medium text-blue-600">
+              <div className="text-sm font-medium text-primary-600">
                 {row_count || "0"}
               </div>
             </div>
@@ -86,7 +86,7 @@ export function QueryPerformance({ data }: ResultsTableProps) {
               <div className="text-sm font-medium text-gray-500 mb-1">
                 Database Name
               </div>
-              <div className="text-sm font-medium text-blue-600">
+              <div className="text-sm font-medium text-primary-600">
                 {databases?.find((db) => db.id === connection_id)?.name}
               </div>
             </div>

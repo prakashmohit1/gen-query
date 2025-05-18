@@ -20,6 +20,7 @@ import {
   Share2,
   Activity,
   MoreVertical,
+  Play,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -31,6 +32,7 @@ import { databaseService } from "@/lib/services/database.service";
 import Role from "@/app/enums/role";
 import { FormattedMessage } from "@/components/common/formatted-message";
 import { useParams } from "next/navigation";
+import { sqlQueriesService } from "@/lib/services/sql-queries";
 
 interface Message {
   role: Role;
@@ -92,6 +94,34 @@ interface SelectedItems {
 interface SidePanel {
   isOpen: boolean;
   type: "history" | "configure" | "monitoring" | "share" | "menu" | null;
+}
+
+interface QueryResultColumn {
+  name: string;
+  type: string;
+}
+
+interface QueryExecutionResult {
+  id: string;
+  executed_query: string;
+  execution_result: string;
+  execution_status: boolean;
+  error_message: string;
+  execution_time_ms: number;
+  user_id: string;
+  database_id: string;
+  created_at: string;
+  result: {
+    columns: QueryResultColumn[];
+    rows: any[][];
+    row_count: number;
+    execution_time_ms: number;
+  };
+}
+
+interface QueryResult {
+  executionResult: QueryExecutionResult;
+  error?: string;
 }
 
 const DeleteConfirmationDialog = ({
@@ -174,6 +204,12 @@ const GenQueryAiChat = ({
     isOpen: false,
     type: null,
   });
+  const [queryResults, setQueryResults] = useState<{
+    [key: string]: QueryResult;
+  }>({});
+  const [activeContent, setActiveContent] = useState<{
+    [key: string]: "none" | "description" | "code";
+  }>({});
 
   const selectedDatabase = params.id;
   const selectedConnection = params.connectionId;
@@ -265,6 +301,59 @@ const GenQueryAiChat = ({
     }
   }, [inputMessage]);
 
+  const extractAndExecuteSQL = async (content: string) => {
+    const sqlMatches = content.match(/```sql\n([\s\S]*?)```/g);
+    if (!sqlMatches) return null;
+
+    const results: { [key: string]: QueryResult } = {};
+
+    for (const match of sqlMatches) {
+      const sql = match
+        .replace(/```sql\n/, "")
+        .replace(/```$/, "")
+        .trim();
+      try {
+        const response = await sqlQueriesService.executeSQLQuery({
+          query_text: sql,
+          database_id: selectedDatabase || "",
+          params: {},
+        });
+
+        results[sql] = {
+          executionResult: response,
+        };
+      } catch (error) {
+        console.error("Error executing SQL:", error);
+        results[sql] = {
+          executionResult: {
+            id: "",
+            executed_query: sql,
+            execution_result: "",
+            execution_status: false,
+            error_message:
+              error instanceof Error
+                ? error.message
+                : "Failed to execute query",
+            execution_time_ms: 0,
+            user_id: "",
+            database_id: selectedDatabase || "",
+            created_at: new Date().toISOString(),
+            result: {
+              columns: [],
+              rows: [],
+              row_count: 0,
+              execution_time_ms: 0,
+            },
+          },
+          error:
+            error instanceof Error ? error.message : "Failed to execute query",
+        };
+      }
+    }
+
+    return results;
+  };
+
   const handleSendMessage = async (text: string = inputMessage) => {
     if (!text.trim()) return;
 
@@ -280,15 +369,16 @@ const GenQueryAiChat = ({
     setIsLoading(true);
 
     try {
-      // Prepare the payload
       const payload: ChatRequest = {
-        database_server_connection_id: selectedConnection?.id || "",
+        database_server_connection_id: selectedConnection || "",
         options: {
           table_name: selectedItems.tableName,
           columns:
             selectedItems.columns.length > 0
               ? selectedItems.columns
               : undefined,
+          filter: "",
+          limit: 100,
         },
         user_message: text,
       };
@@ -298,7 +388,6 @@ const GenQueryAiChat = ({
         currentConversationId || undefined
       );
 
-      // Add assistant's response to the messages
       if (response) {
         const newAssistantMessage: ChatMessage = {
           id: messages.length + 2,
@@ -309,17 +398,20 @@ const GenQueryAiChat = ({
 
         setMessages((prev) => [...prev, newAssistantMessage]);
 
-        // If this was a new conversation (POST), set the conversation ID from response
+        // Extract and execute SQL if present
+        const results = await extractAndExecuteSQL(response.content);
+        if (results) {
+          setQueryResults((prev) => ({ ...prev, ...results }));
+        }
+
         if (!currentConversationId && response.conversation_id) {
           setCurrentConversationId(response.conversation_id);
         }
       }
 
-      // Reset selected items after sending
       setSelectedItems({ tableName: "", columns: [] });
     } catch (error) {
       console.error("Error sending message:", error);
-      // Show error message to user
       const errorMessage =
         error instanceof Error ? error.message : "Failed to send message";
       setMessages((prev) => [
@@ -488,6 +580,81 @@ const GenQueryAiChat = ({
     setSidePanel({ isOpen: false, type: null });
   };
 
+  const renderQueryResult = (sql: string, result: QueryResult) => {
+    const { executionResult } = result;
+
+    if (!executionResult.execution_status || result.error) {
+      return (
+        <div className="mt-2 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+          {result.error || executionResult.error_message}
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-2">
+        {/* Execution Stats */}
+        <div className="flex items-center gap-4 mb-2 text-xs text-gray-500">
+          <span>Rows: {executionResult.result.row_count}</span>
+          <span>•</span>
+          <span>
+            Time: {(executionResult.result.execution_time_ms / 1000).toFixed(2)}
+            s
+          </span>
+        </div>
+
+        {/* Results Table */}
+        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                {executionResult.result.columns.map((column, i) => (
+                  <th
+                    key={i}
+                    className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider group"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>{column.name}</span>
+                      <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                        ({column.type})
+                      </span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {executionResult.result.rows.map((row, i) => (
+                <tr key={i} className="hover:bg-gray-50">
+                  {row.map((cell, j) => (
+                    <td
+                      key={j}
+                      className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap"
+                    >
+                      {cell?.toString() || ""}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const toggleContent = (
+    messageId: number,
+    sql: string,
+    type: "description" | "code"
+  ) => {
+    setActiveContent((prev) => ({
+      ...prev,
+      [`${messageId}-${sql}`]:
+        prev[`${messageId}-${sql}`] === type ? "none" : type,
+    }));
+  };
+
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
@@ -505,9 +672,9 @@ const GenQueryAiChat = ({
         }}
         onConfirm={handleConfirmDelete}
       />
-      <div className="p-4 h-full flex">
+      <div className="p-4 h-full flex max-w-[calc(100vw-186px)]">
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 w-full">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-semibold text-gray-900">New Chat 1</h1>
@@ -808,10 +975,82 @@ const GenQueryAiChat = ({
                             : "bg-gray-200"
                         }`}
                       >
-                        <FormattedMessage
-                          content={message.content}
-                          isDark={message.role === Role.USER}
-                        />
+                        {message.role === Role.USER && (
+                          <FormattedMessage
+                            content={message.content}
+                            isDark={message.role === Role.USER}
+                          />
+                        )}
+                        {message.role === Role.ASSISTANT &&
+                          Object.entries(queryResults).map(([sql, result]) => {
+                            if (message.content.includes(sql)) {
+                              const contentKey = `${message.id}-${sql}`;
+                              const activeTab =
+                                activeContent[contentKey] || "none";
+
+                              return (
+                                <div key={sql} className="mt-4">
+                                  {/* Links */}
+                                  <div className="flex gap-3 mb-3 text-sm">
+                                    <button
+                                      onClick={() =>
+                                        toggleContent(message.id, sql, "code")
+                                      }
+                                      className={`flex items-center gap-1 ${
+                                        activeTab === "code"
+                                          ? "text-primary-600 font-medium"
+                                          : "text-gray-500 hover:text-gray-700"
+                                      }`}
+                                    >
+                                      <span>
+                                        {activeTab === "code"
+                                          ? "Hide Code"
+                                          : "Show Code"}
+                                      </span>
+                                    </button>
+                                  </div>
+
+                                  {/* Description Content */}
+                                  {activeTab === "description" && (
+                                    <div className="mb-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+                                      {message.content}
+                                    </div>
+                                  )}
+
+                                  {/* Code Content */}
+                                  {activeTab === "code" && (
+                                    <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                                      <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
+                                        {result.executionResult
+                                          .executed_query ||
+                                          "No code available"}
+                                      </pre>
+                                    </div>
+                                  )}
+
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <Code className="w-4 h-4 text-primary-600" />
+                                      <span className="text-sm font-medium">
+                                        Query Result
+                                      </span>
+                                    </div>
+                                    <button
+                                      onClick={() =>
+                                        handleSendMessage(`Execute: ${sql}`)
+                                      }
+                                      className="p-1 hover:bg-primary-50 rounded transition-colors"
+                                      title="Re-run query"
+                                    >
+                                      <Play className="w-4 h-4 text-primary-600" />
+                                    </button>
+                                  </div>
+                                  {renderQueryResult(sql, result)}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })}
                       </div>
                     </div>
                   </div>
@@ -893,12 +1132,12 @@ const GenQueryAiChat = ({
               )}
               <div className="relative">
                 {/* <button
-                  ref={buttonRef}
-                  onClick={handleAtButtonClick}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
-                >
-                  <span className="text-gray-500 text-sm font-medium">@</span>
-                </button> */}
+                ref={buttonRef}
+                onClick={handleAtButtonClick}
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                <span className="text-gray-500 text-sm font-medium">@</span>
+              </button> */}
                 <textarea
                   ref={inputRef}
                   value={inputMessage}
